@@ -6,6 +6,7 @@ from classes import Shift,Worker
 import random
 import csv
 import pandas as pd
+import functools
 import os
 
 app = Flask(__name__)
@@ -19,13 +20,13 @@ API_TOKEN = "NitayToken123"
 
 # Simple utility function to check the token
 def token_required(f):
+    @functools.wraps(f)  # This preserves the original function's name and metadata
     def wrap(*args, **kwargs):
         token = request.headers.get('Authorization')
         if token != f"Bearer {API_TOKEN}":
             return jsonify({'error': 'Unauthorized access, invalid token'}), 401
         return f(*args, **kwargs)
     return wrap
-
 
 def AmountOfShiftsToAllocateAtStart(list_of_shifts) -> int:
     amount = 0

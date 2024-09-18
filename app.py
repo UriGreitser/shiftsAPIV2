@@ -15,6 +15,18 @@ global_prefrences = None
 shift_config = None
 prefrences_file = 'prefrences.csv'
 
+API_TOKEN = "NitayToken123"
+
+# Simple utility function to check the token
+def token_required(f):
+    def wrap(*args, **kwargs):
+        token = request.headers.get('Authorization')
+        if token != f"Bearer {API_TOKEN}":
+            return jsonify({'error': 'Unauthorized access, invalid token'}), 401
+        return f(*args, **kwargs)
+    return wrap
+
+
 def AmountOfShiftsToAllocateAtStart(list_of_shifts) -> int:
     amount = 0
     for shift in list_of_shifts:
@@ -771,6 +783,7 @@ def upload_json():
         return jsonify({'error': str(e)}), 500
     
 @app.route('/api/get_json', methods=['GET'])
+@token_required
 def get_json():
     global shift_config
     
@@ -815,6 +828,7 @@ def upload_csv():
     
     
 @app.route('/api/get_csv', methods=['GET'])
+@token_required
 def get_csv():
     # Define the path to the CSV file
     csv_path = os.path.join(os.getcwd(), 'prefrences.csv')

@@ -18,6 +18,52 @@ prefrences_file = 'prefrences.csv'
 
 API_TOKEN = "NitayToken123"
 
+#mapping between numbers and shifts
+def replace_shift_keys(input_json):
+    # Define the reverse mapping for each day and shift name to shift number
+    reverse_shift_mapping = {
+        "Sunday Morning": "1",
+        "Sunday Evening": "2",
+        "Sunday Night": "3",
+        "Monday Morning": "4",
+        "Monday Evening": "5",
+        "Monday Night": "6",
+        "Tuesday Morning": "7",
+        "Tuesday Evening": "8",
+        "Tuesday Night": "9",
+        "Wednesday Morning": "10",
+        "Wednesday Evening": "11",
+        "Wednesday Night": "12",
+        "Thursday Morning": "13",
+        "Thursday Evening": "14",
+        "Thursday Night": "15",
+        "Friday Morning": "16",
+        "Friday Evening": "17",
+        "Friday Night": "18",
+        "Saturday Morning": "19",
+        "Saturday Evening": "20",
+        "Saturday Night": "21",
+        "Saturday Middle": "22",
+        "Sunday Middle": "23"
+    }
+    # Copy the input JSON to avoid modifying the original
+    output_json = input_json.copy()
+    
+    # Get the specific shifts dictionary from the input JSON
+    specific_shifts = input_json.get("amount_of_workers_to_allocate_specific_shifts", {})
+    
+    # Create a new dictionary with the updated keys
+    updated_shifts = {}
+    for shift_label, workers in specific_shifts.items():
+        # Replace the day and shift with the corresponding number
+        shift_number = reverse_shift_mapping.get(shift_label, f"Unknown shift {shift_label}")
+        updated_shifts[shift_number] = workers
+    
+    # Replace the old specific shifts with the updated shifts in the output JSON
+    output_json["amount_of_workers_to_allocate_specific_shifts"] = updated_shifts
+    
+    return output_json
+
 # Simple utility function to check the token
 def token_required(f):
     @functools.wraps(f)  # This preserves the original function's name and metadata
@@ -52,6 +98,7 @@ def CheckAllShiftsAssigned(shifts):
     return True
 
 def ReadFromGoogleSheets(prefrences_file):
+    print("TESTING")
     worker_list = []
     with open(prefrences_file, mode='r',encoding='utf-8') as file:
         reader = csv.reader(file)
@@ -105,9 +152,12 @@ def ReadFromGoogleSheets(prefrences_file):
     return worker_list
 
 
-def CreateShiftsByConfigFile(shift_config): # this isnt working right for shifts 22 and 23 - if i try to set them to 0 it doesnt.
+def CreateShiftsByConfigFile(shift_config,list_of_workers): # this isnt working right for shifts 22 and 23 - if i try to set them to 0 it doesnt.
     list_of_shifts = []
+    shift_config = replace_shift_keys(shift_config)
+    print(shift_config)
     specific_shifts_dict = shift_config["amount_of_workers_to_allocate_specific_shifts"]
+    specific_workers_list = shift_config["hard_coded_shifts"]
     print("SPECIFIC SHIFTS DICT: ", specific_shifts_dict)
 
     for i in range(1,24):
@@ -115,7 +165,6 @@ def CreateShiftsByConfigFile(shift_config): # this isnt working right for shifts
             amount_of_workers_to_allocate_no_changes = 1
         else:
             amount_of_workers_to_allocate_no_changes = shift_config["amount_of_workers_to_allocate_by_default"]
-
         if str(i) in specific_shifts_dict:
             amount_of_workers_to_allocate_no_changes = shift_config["amount_of_workers_to_allocate_specific_shifts"][str(i)]
         else:
@@ -128,8 +177,19 @@ def CreateShiftsByConfigFile(shift_config): # this isnt working right for shifts
             night_shift_bool = False
         shift = Shift(night_shift_bool,shift_id = i,amount_of_workers_to_allocate_no_changes=amount_of_workers_to_allocate_no_changes)
         list_of_shifts.append(shift)
-    return list_of_shifts
+        
+    if len(specific_workers_list)==0:
+        return list_of_shifts
+    
+    for item in specific_workers_list:
+        shift_id,worker_name = item.split(' ')[0],item.split(' ')[1]
+        shift = GetShiftByID(list_of_shifts,int(shift_id))
+        worker = GetWorkerByName(list_of_workers,worker_name)
+        print("WHY???")
+        AssignWorkerToShift(worker,shift)
+        shift.amount_of_workers_to_allocate_no_changes -= 1
 
+    return list_of_shifts
 
 
 list_of_names1 = ["Nitay", "Uri"]
@@ -203,6 +263,11 @@ def get_shift_by_id(shifts_list, shift_id) -> Shift:
             return shift
     return None  
 
+def GetWorkerByName(list_of_workers,name):
+    for worker in list_of_workers:
+        if worker.name == name:
+            return worker
+    return None
 # prints the list of workers by names
 def PrintListOfWorkersByNames(list_of_workers):
     for worker in list_of_workers:
@@ -287,7 +352,10 @@ def CreateShiftList() -> list:
     return shift_list
 
 # assigns the worker to the shift
-def AssignWorkerToShift(worker,shift):
+def AssignWorkerToShift(worker,shift,hard_coded=None):
+    if hard_coded==True:
+        shift.hardcoded_worker.append(worker)
+        
     shift.list_of_workers.append(worker)
     shift.number_of_assigned_workers += 1
     shift.workers_left_to_assign -= 1
@@ -305,42 +373,42 @@ def AssignWorkerToShift(worker,shift):
         worker.night_shifts_allocated += 1
     if IsShiftAWeekendShift(shift):
         worker.amount_of_weekend_shifts += 1
+    
 
-def RemoveWorkerFromShiftNewVersion(worker,shift):
-    if worker not in shift.list_of_workers:
-        print("Worker is not in the shift!!!!! ERROR")
-        return
-    if worker is shift.hardcoded_worker:
-        print("Worker is hardcoded to the shift, can't remove him!")
-        return
-    shift.list_of_workers.remove(worker)
-    shift.list_of_workers_by_id.remove(worker.worker_id)
-    shift.list_of_workers_by_name.remove(worker.name)
-    shift.number_of_assigned_workers -= 1
-    shift.workers_left_to_assign += 1
+# def RemoveWorkerFromShiftNewVersion(worker,shift):
+#     if worker not in shift.list_of_workers:
+#         print("Worker is not in the shift!!!!! ERROR")
+#         return
+#     if worker is shift.hardcoded_worker:
+#         print("Worker is hardcoded to the shift, can't remove him!")
+#         return
+#     shift.list_of_workers.remove(worker)
+#     shift.list_of_workers_by_id.remove(worker.worker_id)
+#     shift.list_of_workers_by_name.remove(worker.name)
+#     shift.number_of_assigned_workers -= 1
+#     shift.workers_left_to_assign += 1
 
 
-    #worker removes
-    worker.shifts_assigned.remove(shift)
-    worker.shifts_assigned_by_id.remove(shift.shift_id)
-    worker.num_shifts_left_to_assign += 1
-    banned_set_from_that_shift= ReturnSetOfBannedShiftsPerShift(shift)
-    for x in list(banned_set_from_that_shift):
-        try:
-            if x in worker.closed_shifts_no_changes:
-                worker.added_banned_shifts.remove(x)
-            else:
-                worker.banned_shifts_added.remove(x)
-                worker.all_restrictions.remove(x)
-        except:
-            # print("ERROR - remove worker from shift")
-            pass
-        
+#     #worker removes
+#     worker.shifts_assigned.remove(shift)
+#     worker.shifts_assigned_by_id.remove(shift.shift_id)
+#     worker.num_shifts_left_to_assign += 1
+#     banned_set_from_that_shift= ReturnSetOfBannedShiftsPerShift(shift)
+#     for x in list(banned_set_from_that_shift):
+#         try:
+#             if x in worker.closed_shifts_no_changes:
+#                 worker.added_banned_shifts.remove(x)
+#             else:
+#                 worker.banned_shifts_added.remove(x)
+#                 worker.all_restrictions.remove(x)
+#         except:
+#             # print("ERROR - remove worker from shift")
+#             pass
 
-    if shift.is_night_shift:
-        worker.night_shifts_allocated -= 1
-    if IsShiftAWeekendShift(shift):
-        worker.amount_of_weekend_shifts -= 1
+#     if shift.is_night_shift:
+#         worker.night_shifts_allocated -= 1
+#     if IsShiftAWeekendShift(shift):
+#         worker.amount_of_weekend_shifts -= 1
 
 
 
@@ -675,6 +743,7 @@ def Create_Schedule_TryToAllocateAllRemainingShifts(list_of_shifts,list_of_worke
     # print("number of iterations!!: ", i)
 
 def CreateSchedule_Full(list_of_shifts,list_of_workers):
+    print("WERE IN")
     total_removes = 0
     total_total_removes = 0
     total = 0
@@ -719,7 +788,7 @@ def CreateSchedule_Full(list_of_shifts,list_of_workers):
                     if error_removing > 100000:
                         print("STARTING OVER WITH NEW ALLOCATION FOR bc of total_removes")
                         list_of_workers = ReadFromGoogleSheets(prefrences_file)
-                        list_of_shifts = CreateShiftsByConfigFile(shift_config)
+                        list_of_shifts = CreateShiftsByConfigFile(shift_config,list_of_workers)
                         print("REACHED 100kerrors removing")
                         CreateSchedule_UntilEveryShiftIsCoveredByOneWorker(list_of_shifts,list_of_workers)
                         WriteShiftsToCSVFile(list_of_shifts,filename="WHA!!!!T.csv")
@@ -741,7 +810,7 @@ def CreateSchedule_Full(list_of_shifts,list_of_workers):
                 if total_removes > 10000:
                     print("STARTING OVER WITH NEW ALLOCATION FOR bc of total_removes")
                     list_of_workers = ReadFromGoogleSheets(prefrences_file)
-                    list_of_shifts = CreateShiftsByConfigFile(shift_config)
+                    list_of_shifts = CreateShiftsByConfigFile(shift_config,list_of_workers)
                     print("REACHED 10000 REMOVES")
                     CreateSchedule_UntilEveryShiftIsCoveredByOneWorker(list_of_shifts,list_of_workers)
                     total += total_removes
@@ -852,15 +921,13 @@ def createShifts():
         # Define the path to the CSV file
         print("TEST FIRST")
         file_path = os.path.join(os.getcwd(), 'full_shifts.csv')
-
         list_of_workers = ReadFromGoogleSheets(prefrences_file)
-
-        list_of_shifts = CreateShiftsByConfigFile(shift_config)
+        print("HERE?")
+        list_of_shifts = CreateShiftsByConfigFile(shift_config,list_of_workers)
+        print("YES???")
 
         total_removes,list_of_shifts,list_of_workers,total_total_removes = CreateSchedule_Full(list_of_shifts,list_of_workers)
         WriteShiftsToCSVFile(list_of_shifts,filename="full_shifts.csv")
-        
-    
     
         PrintWorkersAndTheirShifts(list_of_workers)
         print("--------------------------------------------------")
@@ -887,9 +954,92 @@ def createShifts():
         return jsonify({'error': str(e)}), 500
 
 
+
+@app.route('/api/create_all_shifts', methods=['POST'])
+def upload_files():
+    global shift_config
+
+    # Check if both files are present in the request
+    if 'csv_file' not in request.files or 'json_file' not in request.files:
+        return jsonify({'error': 'Both csv_file and json_file are required.'}), 400
+    
+    # Access the files from the request
+    csv_file = request.files['csv_file']
+    json_file = request.files['json_file']
+    
+    # Check if the files have valid filenames
+    if csv_file.filename == '' or json_file.filename == '':
+        return jsonify({'error': 'No file selected for one or both of the files.'}), 400
+    
+    try:
+        # Process the CSV file
+        csv_data = pd.read_csv(io.StringIO(csv_file.stream.read().decode('UTF-8')), header=None)
+        
+        # Define your own column names (adapt as necessary)
+        csv_data.columns = ['Name', 'Day1', 'Day2', 'Day3', 'Day4', 'Day5', 'Day6', 'Day7', 'Count', 'Value']
+
+        # Define the path to save the file (same directory as the script)
+        save_path = os.path.join(os.getcwd(), 'prefrences.csv')
+        
+        # Save the CSV to a file without renaming columns
+        csv_data.to_csv(save_path, index=False,header=False)
+
+        
+        # Process the JSON file
+        json_content = json.load(json_file)
+                
+        # Store the parsed JSON content in the global variable
+        shift_config = json_content
+        
+        file_path = os.path.join(os.getcwd(), 'full_shifts.csv')
+
+        list_of_workers = ReadFromGoogleSheets(prefrences_file)
+        print("?????")
+        list_of_shifts = CreateShiftsByConfigFile(shift_config,list_of_workers)
+        
+        print("YES????")
+        PrintListOfShifts(list_of_shifts)
+        total_removes,list_of_shifts,list_of_workers,total_total_removes = CreateSchedule_Full(list_of_shifts,list_of_workers)
+        WriteShiftsToCSVFile(list_of_shifts,filename="full_shifts.csv")
+    
+        PrintWorkersAndTheirShifts(list_of_workers)
+        print("--------------------------------------------------")
+        print("Amount of shifts to allocate at start:", AmountOfShiftsToAllocateAtStart(list_of_shifts))
+
+        print("Amount of shifts allocated/amount of total shifts entered:", NumberOfWorkersAssignedToAllShifts(list_of_shifts)/AmountOfShiftsToAllocateAtStart(list_of_shifts))
+        booli = CheckAllShiftsAssigned(list_of_shifts)
+        if booli:
+            print("All shifts are assigned correctly!")
+        else: 
+            print("ERROR - NOT ALL SHIFTS ARE ASSIGNED CORRECTLY")
+
+        print("Amount of shifts remaining to assign=", AmountOfRemainingShiftsToAssign(list_of_workers))
+        print("Amount of workers assigned to all shifts=", NumberOfWorkersAssignedToAllShifts(list_of_shifts))
+        print("TOTAL REMOVES: ", total_removes)
+        print("TOTAL_total REMOVES: ", total_total_removes)
+        
+        # Send the file as a response
+        return send_file(file_path, as_attachment=True, mimetype='text/csv')
+        
+    
+        # Now you can work with csv_data (DataFrame) and json_data (Python dict)
+        return jsonify({
+            'message': 'Files processed successfully!',
+            'csv_columns': csv_data.columns.tolist(),
+            'json_content': json_content
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+    
 # Root route (GET request)
 @app.route('/')
 def home():
+
+    
+    # updated_json = replace_shift_keys(input_json)
+    # print(json.dumps(updated_json, indent=4))
     return jsonify({'message': 'Welcome to my Flask API!'})
     # Return the CSV as a downloadable response
     return Response(

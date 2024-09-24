@@ -16,7 +16,7 @@ global_prefrences = None
 shift_config = None
 prefrences_file = 'prefrences.csv'
 
-API_TOKEN = "NitayToken123"
+API_TOKEN = "videotoken123" 
 
 #mapping between numbers and shifts
 def replace_shift_keys(input_json):
@@ -946,6 +946,7 @@ def get_csv():
 
 
 @app.route('/api/create_shifts', methods=['GET'])
+@token_required
 def createShifts():
     try:
         # Define the path to the CSV file
@@ -993,6 +994,7 @@ def createShifts():
 
 
 @app.route('/api/get_stats', methods=['GET'])
+@token_required
 def get_stats():
     # Path to the stats.json file
     stats_file_path = 'stats.json'
@@ -1009,6 +1011,7 @@ def get_stats():
 
 
 @app.route('/api/create_all_shifts', methods=['POST'])
+@token_required
 def upload_files():
     global shift_config
 

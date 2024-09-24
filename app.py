@@ -1054,7 +1054,7 @@ def upload_files():
         WriteShiftsToCSVFile(list_of_shifts,filename="full_shifts.csv")
     
         PrintWorkersAndTheirShifts(list_of_workers)
-                stats = {}
+        stats = {}
         stats = AddWorkersAndTheirShiftsToStats(list_of_workers,stats)
         # Collect stats and store them in the dictionary
         stats["Amount of shifts to allocate at start"] = AmountOfShiftsToAllocateAtStart(list_of_shifts)

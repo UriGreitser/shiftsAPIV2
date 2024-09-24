@@ -88,6 +88,36 @@ def PrintWorkersAndTheirShifts(list_of_workers):
         for shift_of_worker in worker.shifts_assigned:
             print(Shift.PrintShiftIDByDayAndTime(shift_of_worker))
 
+def AddWorkersAndTheirShiftsToStats(list_of_workers, stats):
+    # Define the custom sorting order for days of the week
+    day_order = {
+        "Sunday": 1,
+        "Monday": 2,
+        "Tuesday": 3,
+        "Wednesday": 4,
+        "Thursday": 5,
+        "Friday": 6,
+        "Saturday": 7
+    }
+    
+    # Add shifts for every worker to the stats
+    for worker in list_of_workers:
+        # Create a list of shifts for the worker
+        worker_shifts = []
+        for shift_of_worker in worker.shifts_assigned:
+            # Add the shift information to the list
+            shift_info = Shift.PrintShiftIDByDayAndTime(shift_of_worker)
+            worker_shifts.append(shift_info)
+        
+        # Sort the shifts based on the day of the week (first word)
+        worker_shifts.sort(key=lambda shift: day_order.get(shift.split()[0], 0))
+        
+        # Add the worker and their sorted shifts to the stats dictionary
+        stats[worker.name] = worker_shifts
+
+    return stats
+
+
 
 #checks if all shifts are assigned to a worker that has not blocked them
 def CheckAllShiftsAssigned(shifts):
@@ -929,21 +959,29 @@ def createShifts():
         total_removes,list_of_shifts,list_of_workers,total_total_removes = CreateSchedule_Full(list_of_shifts,list_of_workers)
         WriteShiftsToCSVFile(list_of_shifts,filename="full_shifts.csv")
     
-        PrintWorkersAndTheirShifts(list_of_workers)
-        print("--------------------------------------------------")
-        print("Amount of shifts to allocate at start:", AmountOfShiftsToAllocateAtStart(list_of_shifts))
+        #PrintWorkersAndTheirShifts(list_of_workers)
+        
+        stats = {}
+        stats = AddWorkersAndTheirShiftsToStats(list_of_workers,stats)
+        # Collect stats and store them in the dictionary
+        stats["Amount of shifts to allocate at start"] = AmountOfShiftsToAllocateAtStart(list_of_shifts)
+        stats["Amount of shifts allocated/amount of total shifts entered"] = NumberOfWorkersAssignedToAllShifts(list_of_shifts) / AmountOfShiftsToAllocateAtStart(list_of_shifts)
 
-        print("Amount of shifts allocated/amount of total shifts entered:", NumberOfWorkersAssignedToAllShifts(list_of_shifts)/AmountOfShiftsToAllocateAtStart(list_of_shifts))
         booli = CheckAllShiftsAssigned(list_of_shifts)
         if booli:
-            print("All shifts are assigned correctly!")
-        else: 
-            print("ERROR - NOT ALL SHIFTS ARE ASSIGNED CORRECTLY")
+            stats["Shifts assignment status"] = "All shifts are assigned correctly!"
+        else:
+            stats["Shifts assignment status"] = "ERROR - NOT ALL SHIFTS ARE ASSIGNED CORRECTLY"
 
-        print("Amount of shifts remaining to assign=", AmountOfRemainingShiftsToAssign(list_of_workers))
-        print("Amount of workers assigned to all shifts=", NumberOfWorkersAssignedToAllShifts(list_of_shifts))
-        print("TOTAL REMOVES: ", total_removes)
-        print("TOTAL_total REMOVES: ", total_total_removes)
+        stats["Amount of shifts remaining to assign"] = AmountOfRemainingShiftsToAssign(list_of_workers)
+        stats["Amount of workers assigned to all shifts"] = NumberOfWorkersAssignedToAllShifts(list_of_shifts)
+        stats["TOTAL REMOVES"] = total_removes
+        stats["TOTAL_total REMOVES"] = total_total_removes
+        
+        with open('stats.json', 'w') as json_file:
+            json.dump(stats, json_file, indent=4)
+
+
         
         # Send the file as a response
         return send_file(file_path, as_attachment=True, mimetype='text/csv')
@@ -953,6 +991,21 @@ def createShifts():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+@app.route('/api/get_stats', methods=['GET'])
+def get_stats():
+    # Path to the stats.json file
+    stats_file_path = 'stats.json'
+    
+    # Check if the file exists
+    if os.path.exists(stats_file_path):
+        try:
+            # Send the file as a response
+            return send_file(stats_file_path, mimetype='application/json', as_attachment=False)
+        except Exception as e:
+            return jsonify({'error': f"Failed to send the file: {str(e)}"}), 500
+    else:
+        return jsonify({'error': 'Stats file not found'}), 404
 
 
 @app.route('/api/create_all_shifts', methods=['POST'])
@@ -994,29 +1047,35 @@ def upload_files():
         file_path = os.path.join(os.getcwd(), 'full_shifts.csv')
 
         list_of_workers = ReadFromGoogleSheets(prefrences_file)
-        print("?????")
         list_of_shifts = CreateShiftsByConfigFile(shift_config,list_of_workers)
         
-        print("YES????")
         PrintListOfShifts(list_of_shifts)
         total_removes,list_of_shifts,list_of_workers,total_total_removes = CreateSchedule_Full(list_of_shifts,list_of_workers)
         WriteShiftsToCSVFile(list_of_shifts,filename="full_shifts.csv")
     
         PrintWorkersAndTheirShifts(list_of_workers)
-        print("--------------------------------------------------")
-        print("Amount of shifts to allocate at start:", AmountOfShiftsToAllocateAtStart(list_of_shifts))
+                stats = {}
+        stats = AddWorkersAndTheirShiftsToStats(list_of_workers,stats)
+        # Collect stats and store them in the dictionary
+        stats["Amount of shifts to allocate at start"] = AmountOfShiftsToAllocateAtStart(list_of_shifts)
+        stats["Amount of shifts allocated/amount of total shifts entered"] = NumberOfWorkersAssignedToAllShifts(list_of_shifts) / AmountOfShiftsToAllocateAtStart(list_of_shifts)
 
-        print("Amount of shifts allocated/amount of total shifts entered:", NumberOfWorkersAssignedToAllShifts(list_of_shifts)/AmountOfShiftsToAllocateAtStart(list_of_shifts))
         booli = CheckAllShiftsAssigned(list_of_shifts)
         if booli:
-            print("All shifts are assigned correctly!")
-        else: 
-            print("ERROR - NOT ALL SHIFTS ARE ASSIGNED CORRECTLY")
+            stats["Shifts assignment status"] = "All shifts are assigned correctly!"
+        else:
+            stats["Shifts assignment status"] = "ERROR - NOT ALL SHIFTS ARE ASSIGNED CORRECTLY"
 
-        print("Amount of shifts remaining to assign=", AmountOfRemainingShiftsToAssign(list_of_workers))
-        print("Amount of workers assigned to all shifts=", NumberOfWorkersAssignedToAllShifts(list_of_shifts))
-        print("TOTAL REMOVES: ", total_removes)
-        print("TOTAL_total REMOVES: ", total_total_removes)
+        stats["Amount of shifts remaining to assign"] = AmountOfRemainingShiftsToAssign(list_of_workers)
+        stats["Amount of workers assigned to all shifts"] = NumberOfWorkersAssignedToAllShifts(list_of_shifts)
+        stats["TOTAL REMOVES"] = total_removes
+        stats["TOTAL_total REMOVES"] = total_total_removes
+        
+        with open('stats.json', 'w') as json_file:
+            json.dump(stats, json_file, indent=4)
+
+
+
         
         # Send the file as a response
         return send_file(file_path, as_attachment=True, mimetype='text/csv')

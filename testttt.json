@@ -1,0 +1,23 @@
+{
+    "amount_of_workers_to_allocate_by_default": 2,
+    "hard_coded_shifts": [],
+    "amount_of_workers_to_allocate_specific_shifts": {
+        "Sunday Night": 1,
+        "Monday Night": 1,
+        "Tuesday Night": 1,
+        "Wednesday Night": 1,
+        "Thursday Night": 1,
+        "Friday Night": 1,
+        "Saturday Night": 1,
+        "Sunday Morning": 1,
+        "Monday Morning": 1,
+        "Tuesday Morning": 1,
+        "Wednesday Morning": 1,
+        "Thursday Morning": 1,
+        "Friday Morning": 1,
+        "Saturday Morning": 1,
+        "Tuesday Evening": 3,
+        "Wednesday Evening": 3,
+        "Thursday Evening": 3
+    }
+}

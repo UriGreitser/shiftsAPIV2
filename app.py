@@ -137,9 +137,12 @@ def ReadFromGoogleSheets(prefrences_file):
             name = row[0]
             open_shifts = set()
             start = 1
-            night_shifts_requested = int(row[8])
-            days_off_taken = int(row[9])
-            shifts_to_allocate = 5 - int(days_off_taken)
+            try:
+                night_shifts_requested = int(float(row[8]))
+                days_off_taken = int(float(row[9]))
+                shifts_to_allocate = 5 - int(float(days_off_taken))
+            except:
+                print("FAIL")
             for i in range(1,8):
                 pref = row[i]
                 if pref == "Open":

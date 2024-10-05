@@ -1,23 +1,23 @@
 {
     "Nitay": [
         "Sunday Middle",
-        "Monday Night",
+        "Monday Evening",
         "Wednesday Morning",
-        "Friday Morning",
-        "Saturday Morning"
+        "Friday Night",
+        "Saturday Evening"
     ],
     "Idan": [
         "Sunday Morning",
         "Monday Evening",
-        "Tuesday Night",
+        "Tuesday Evening",
         "Wednesday Evening",
-        "Thursday Evening"
+        "Thursday Night"
     ],
     "Niro": [
-        "Sunday Evening",
-        "Monday Evening",
+        "Monday Night",
         "Tuesday Evening",
-        "Thursday Night",
+        "Thursday Morning",
+        "Friday Morning",
         "Saturday Morning"
     ],
     "Evgeniy": [
@@ -25,34 +25,34 @@
         "Wednesday Evening",
         "Thursday Evening",
         "Friday Evening",
-        "Saturday Evening"
+        "Saturday Morning"
     ],
     "Natan": [
-        "Sunday Middle",
+        "Sunday Evening",
+        "Monday Morning",
         "Tuesday Evening",
         "Wednesday Night",
+        "Saturday Evening"
+    ],
+    "Israel": [
+        "Sunday Middle",
+        "Monday Evening",
+        "Tuesday Night",
         "Thursday Evening",
         "Saturday Middle"
     ],
-    "Israel": [
-        "Monday Evening",
-        "Tuesday Evening",
-        "Thursday Morning",
-        "Friday Evening",
-        "Saturday Night"
-    ],
     "Sasha": [
         "Sunday Evening",
-        "Monday Morning",
         "Tuesday Morning",
-        "Friday Night",
-        "Saturday Evening"
+        "Thursday Evening",
+        "Friday Evening",
+        "Saturday Night"
     ],
     "Amount of shifts to allocate at start": 35,
     "Amount of shifts allocated/amount of total shifts entered": 1.0,
     "Shifts assignment status": "All shifts are assigned correctly!",
     "Amount of shifts remaining to assign": 0,
     "Amount of workers assigned to all shifts": 35,
-    "TOTAL REMOVES": 400131,
-    "TOTAL_total REMOVES": 1000040
+    "TOTAL REMOVES": 1200212,
+    "TOTAL_total REMOVES": 7800490
 }

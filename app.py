@@ -15,7 +15,7 @@ global_config = None
 global_prefrences = None
 shift_config = {
     "amount_of_workers_to_allocate_by_default": 2,
-    "hard_coded_shifts": [],
+    "hard_coded_shifts": ["Natan-Monday Night","Nitay-Monday Morning"],
     "amount_of_workers_to_allocate_specific_shifts": {
         "Sunday Night": 1,
         "Monday Night": 1,
@@ -24,19 +24,20 @@ shift_config = {
         "Thursday Night": 1,
         "Friday Night": 1,
         "Saturday Night": 1,
-        "Tuesday Evening": 3,
-        "Thursday Evening": 3,
-        "Monday Evening": 3,
+        "Saturday Middle": 1,
+        "Saturday Evening": 1,
         "Sunday Morning": 1,
         "Monday Morning": 1,
         "Tuesday Morning": 1,
+        "Tuesday Evening": 1,
+        "Wednesday Evening": 1,
         "Wednesday Morning": 1,
         "Thursday Morning": 1,
-        "Saturday Middle": 1,
         "Friday Morning": 1,
+        "Friday Evening": 3,
     }
 }
-
+#firday morning ^^^
 prefrences_file = 'pref_sasha.csv'
 
 API_TOKEN = "videotoken123" 
@@ -239,16 +240,9 @@ def CreateShiftsByConfigFile(shift_config,list_of_workers): # this isnt working 
         
     if len(specific_workers_list)==0:
         return list_of_shifts
-    
-    for item in specific_workers_list:
-        shift_id,worker_name = item.split(' ')[0],item.split(' ')[1]
-        shift = GetShiftByID(list_of_shifts,int(shift_id))
-        worker = GetWorkerByName(list_of_workers,worker_name)
-        print("WHY???")
-        AssignWorkerToShift(worker,shift)
-        shift.amount_of_workers_to_allocate_no_changes -= 1
 
-    return list_of_shifts
+
+    return list_of_shifts,specific_workers_list
 
 
 list_of_names1 = ["Nitay", "Uri"]
@@ -413,7 +407,7 @@ def CreateShiftList() -> list:
 # assigns the worker to the shift
 def AssignWorkerToShift(worker,shift,hard_coded=None):
     if hard_coded==True:
-        shift.hardcoded_worker.append(worker)
+        shift.hardcoded_worker = worker
         
     shift.list_of_workers.append(worker)
     shift.number_of_assigned_workers += 1
@@ -829,9 +823,42 @@ def CreateSchedule_FillingAllProblematicShifts(list_of_shifts,list_of_workers):
                     print("WE HAD A PROBLEM IN THE FIRST FUNCTION")
                     exit()
     return True
-                
 
-def CreateSchedule_Full(list_of_shifts,list_of_workers):
+def CreateSchedule_AllocateSSpecificShifts(list_of_shifts,list_of_workers,specific_workers_list):
+    for element in specific_workers_list:
+        worker,id = element.split("-")
+        reverse_shift_mapping = {
+            "Sunday Morning": "1",
+            "Sunday Evening": "2",
+            "Sunday Night": "3",
+            "Monday Morning": "4",
+            "Monday Evening": "5",
+            "Monday Night": "6",
+            "Tuesday Morning": "7",
+            "Tuesday Evening": "8",
+            "Tuesday Night": "9",
+            "Wednesday Morning": "10",
+            "Wednesday Evening": "11",
+            "Wednesday Night": "12",
+            "Thursday Morning": "13",
+            "Thursday Evening": "14",
+            "Thursday Night": "15",
+            "Friday Morning": "16",
+            "Friday Evening": "17",
+            "Friday Night": "18",
+            "Saturday Morning": "19",
+            "Saturday Evening": "20",
+            "Saturday Night": "21",
+            "Saturday Middle": "22",
+            "Sunday Middle": "23"
+        }
+        id = reverse_shift_mapping[id]
+        id = int(id)
+        shift_by_id = GetShiftByID(list_of_shifts,id)
+        worker_by_name = GetWorkerByName(list_of_workers,worker)
+        AssignWorkerToShift(worker_by_name,shift_by_id,hard_coded=True)
+
+def CreateSchedule_Full(list_of_shifts,list_of_workers,specific_workers_list):
     print("WERE IN")
     total_removes = 0
     total_total_removes = 0
@@ -840,9 +867,11 @@ def CreateSchedule_Full(list_of_shifts,list_of_workers):
     done = False
     flag_restart = None
     while(done == False):
+        print("another iteration")
         list_of_workers = ReadFromGoogleSheets(prefrences_file)
-        list_of_shifts = CreateShiftsByConfigFile(shift_config,list_of_workers)
+        list_of_shifts,specific_workers_list = CreateShiftsByConfigFile(shift_config,list_of_workers)
         flag = False
+        CreateSchedule_AllocateSSpecificShifts(list_of_shifts,list_of_workers,specific_workers_list)
         for x in range(10):
             CreateSchedule_FillingAllProblematicShifts(list_of_shifts,list_of_workers)
         while(flag == False):
@@ -859,6 +888,8 @@ def CreateSchedule_Full(list_of_shifts,list_of_workers):
                     if random_shift.number_of_assigned_workers != 1:
                         continue
                     random_worker = random.choice(random_shift.list_of_workers)
+                    if random_shift.hardcoded_worker == random_worker:
+                        continue
                     RemoveWorkerFromShift(random_worker,random_shift)
                     random_amount_of_removes -= 1
                     if error_inside > 1000:
@@ -905,6 +936,8 @@ def CreateSchedule_Full(list_of_shifts,list_of_workers):
                     random_worker = random.choice(random_shift.list_of_workers)
                     if random_shift.number_of_assigned_workers < 2:
                         continue
+                    if random_shift.hardcoded_worker == random_worker:
+                        continue
                     RemoveWorkerFromShift(random_worker,random_shift)
                     random_amount_of_removes -= 1
                 total_removes += random_save
@@ -924,8 +957,8 @@ def CreateSchedule_Full(list_of_shifts,list_of_workers):
 
 # print("STARTING")
 # list_of_workers = ReadFromGoogleSheets(prefrences_file)
-# list_of_shifts = CreateShiftsByConfigFile(shift_config,list_of_workers)
-# total_removes,list_of_shifts,list_of_workers,total_total_removes = CreateSchedule_Full(list_of_shifts,list_of_workers)
+# list_of_shifts,specific_workers_list = CreateShiftsByConfigFile(shift_config,list_of_workers)
+# total_removes,list_of_shifts,list_of_workers,total_total_removes = CreateSchedule_Full(list_of_shifts,list_of_workers,specific_workers_list)
 # WriteShiftsToCSVFile(list_of_shifts,filename="full_shifts_nitay.csv")
 # exit()
 

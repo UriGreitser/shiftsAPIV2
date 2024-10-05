@@ -1,22 +1,148 @@
 {
-    "amount_of_workers_to_allocate_by_default": 2,
-    "hard_coded_shifts": [],
-    "amount_of_workers_to_allocate_specific_shifts": {
-        "Sunday Night": 1,
-        "Monday Night": 1,
-        "Tuesday Night": 1,
-        "Wednesday Night": 1,
-        "Thursday Night": 1,
-        "Friday Night": 1,
-        "Saturday Night": 1,
-        "Sunday Morning": 1,
-        "Monday Morning": 1,
-        "Tuesday Morning": 1,
-        "Wednesday Morning": 1,
-        "Thursday Morning": 1,
-        "Friday Morning": 1,
-        "Tuesday Evening": 3,
-        "Thursday Evening": 3
-        
-    }
-}
+    "mccItem": [
+      {
+        "name": "Tereza Mihalikova / Olivia Nicholls v Hao-Ching Chan / Veronika Kudermetova",
+        "id": "fvzq06exx0rbl6a70u0d2f4k",
+        "fixture": {
+          "id": "fvzq06exx0rbl6a70u0d2f4k",
+          "date": "2024-10-04",
+          "time": "11:30:00"
+        },
+        "asset": [
+          {
+            "id": "ihrlfzh0nqnh13nr0pa2u5zj8",
+            "name": "TENNIS: WTA - China Open - Capital Group Diamond <BR>Starting at 05:00 GMT<BR>Sara Errani / Jasmine Paolini v Beatriz Haddad Maia / Laura Siegemund<BR>07:00 GMT<BR>Aryna Sabalenka v Karolina Muchova<BR>10:00 GMT<BR>Mirra Andreeva v Qinwen Zheng<BR>11:30 GMT<BR>Tereza Mihalikova / Olivia Nicholls v Hao-Ching Chan / Veronika Kudermetova<BR>",
+            "type": "urn:perform:livestream",
+            "urn": "urn:perform:livestream:ihrlfzh0nqnh13nr0pa2u5zj8",
+            "language": "x-world"
+          }
+        ]
+      },
+      {
+        "name": "Mirra Andreeva v Qinwen Zheng",
+        "id": "ctu03p0fh4crxt2i0gdjp9xck",
+        "fixture": {
+          "id": "ctu03p0fh4crxt2i0gdjp9xck",
+          "date": "2024-10-04",
+          "time": "10:00:00"
+        },
+        "asset": [
+          {
+            "id": "ihrlfzh0nqnh13nr0pa2u5zj8",
+            "name": "TENNIS: WTA - China Open - Capital Group Diamond <BR>Starting at 05:00 GMT<BR>Sara Errani / Jasmine Paolini v Beatriz Haddad Maia / Laura Siegemund<BR>07:00 GMT<BR>Aryna Sabalenka v Karolina Muchova<BR>10:00 GMT<BR>Mirra Andreeva v Qinwen Zheng<BR>11:30 GMT<BR>Tereza Mihalikova / Olivia Nicholls v Hao-Ching Chan / Veronika Kudermetova<BR>",
+            "type": "urn:perform:livestream",
+            "urn": "urn:perform:livestream:ihrlfzh0nqnh13nr0pa2u5zj8",
+            "language": "x-world"
+          }
+        ]
+      },
+      {
+        "name": "Aryna Sabalenka v Karolina Muchova",
+        "id": "ctpn4vvsz8oyir3pydmhofok4",
+        "fixture": {
+          "id": "ctpn4vvsz8oyir3pydmhofok4",
+          "date": "2024-10-04",
+          "time": "07:00:00"
+        },
+        "asset": [
+          {
+            "id": "ihrlfzh0nqnh13nr0pa2u5zj8",
+            "name": "TENNIS: WTA - China Open - Capital Group Diamond <BR>Starting at 05:00 GMT<BR>Sara Errani / Jasmine Paolini v Beatriz Haddad Maia / Laura Siegemund<BR>07:00 GMT<BR>Aryna Sabalenka v Karolina Muchova<BR>10:00 GMT<BR>Mirra Andreeva v Qinwen Zheng<BR>11:30 GMT<BR>Tereza Mihalikova / Olivia Nicholls v Hao-Ching Chan / Veronika Kudermetova<BR>",
+            "type": "urn:perform:livestream",
+            "urn": "urn:perform:livestream:ihrlfzh0nqnh13nr0pa2u5zj8",
+            "language": "x-world"
+          }
+        ]
+      },
+      {
+        "name": "Sara Errani / Jasmine Paolini v Beatriz Haddad Maia / Laura Siegemund",
+        "id": "g51deni05ulurcp325k1stn8",
+        "fixture": {
+          "id": "g51deni05ulurcp325k1stn8",
+          "date": "2024-10-04",
+          "time": "05:00:00"
+        },
+        "asset": [
+          {
+            "id": "ihrlfzh0nqnh13nr0pa2u5zj8",
+            "name": "TENNIS: WTA - China Open - Capital Group Diamond <BR>Starting at 05:00 GMT<BR>Sara Errani / Jasmine Paolini v Beatriz Haddad Maia / Laura Siegemund<BR>07:00 GMT<BR>Aryna Sabalenka v Karolina Muchova<BR>10:00 GMT<BR>Mirra Andreeva v Qinwen Zheng<BR>11:30 GMT<BR>Tereza Mihalikova / Olivia Nicholls v Hao-Ching Chan / Veronika Kudermetova<BR>",
+            "type": "urn:perform:livestream",
+            "urn": "urn:perform:livestream:ihrlfzh0nqnh13nr0pa2u5zj8",
+            "language": "x-world"
+          }
+        ]
+      },
+      {
+        "name": "Elisabetta Cocciaretto / Liudmila Samsonova v Qianhui Tang / Yue Yuan",
+        "id": "g0ip40atne4g6yxgosux73f8",
+        "fixture": {
+          "id": "g0ip40atne4g6yxgosux73f8",
+          "date": "2024-10-03",
+          "time": "11:50:00"
+        },
+        "asset": [
+          {
+            "id": "1db9dwo7b3zp91apt2i7e6f2ko",
+            "name": "TENNIS: WTA - China Open - Capital Group Diamond<BR>Starting at 05:00 GMT<BR>Sofia Kenin / Bethanie Mattek-Sands v Mirra Andreeva / Diana Shnaider<BR>07:00 GMT<BR>Shuai Zhang v Paula Badosa<BR>10:00 GMT<BR>Yuliia Starodubtseva v Coco Gauff<BR>11:30 GMT<BR>Elisabetta Cocciaretto / Liudmila Samsonova v Qianhui Tang / Yue Yuan<BR>",
+            "type": "urn:perform:livestream",
+            "urn": "urn:perform:livestream:1db9dwo7b3zp91apt2i7e6f2ko",
+            "language": "x-world"
+          }
+        ]
+      },
+      {
+        "name": "Yuliia Starodubtseva v Coco Gauff",
+        "id": "ctybbdbvkcma3gb3imfaow2s4",
+        "fixture": {
+          "id": "ctybbdbvkcma3gb3imfaow2s4",
+          "date": "2024-10-03",
+          "time": "10:05:00"
+        },
+        "asset": [
+          {
+            "id": "1db9dwo7b3zp91apt2i7e6f2ko",
+            "name": "TENNIS: WTA - China Open - Capital Group Diamond<BR>Starting at 05:00 GMT<BR>Sofia Kenin / Bethanie Mattek-Sands v Mirra Andreeva / Diana Shnaider<BR>07:00 GMT<BR>Shuai Zhang v Paula Badosa<BR>10:00 GMT<BR>Yuliia Starodubtseva v Coco Gauff<BR>11:30 GMT<BR>Elisabetta Cocciaretto / Liudmila Samsonova v Qianhui Tang / Yue Yuan<BR>",
+            "type": "urn:perform:livestream",
+            "urn": "urn:perform:livestream:1db9dwo7b3zp91apt2i7e6f2ko",
+            "language": "x-world"
+          }
+        ]
+      },
+      {
+        "name": "Shuai Zhang v Paula Badosa",
+        "id": "cu2nqcivq2kebilp8bl275no4",
+        "fixture": {
+          "id": "cu2nqcivq2kebilp8bl275no4",
+          "date": "2024-10-03",
+          "time": "07:10:00"
+        },
+        "asset": [
+          {
+            "id": "1db9dwo7b3zp91apt2i7e6f2ko",
+            "name": "TENNIS: WTA - China Open - Capital Group Diamond<BR>Starting at 05:00 GMT<BR>Sofia Kenin / Bethanie Mattek-Sands v Mirra Andreeva / Diana Shnaider<BR>07:00 GMT<BR>Shuai Zhang v Paula Badosa<BR>10:00 GMT<BR>Yuliia Starodubtseva v Coco Gauff<BR>11:30 GMT<BR>Elisabetta Cocciaretto / Liudmila Samsonova v Qianhui Tang / Yue Yuan<BR>",
+            "type": "urn:perform:livestream",
+            "urn": "urn:perform:livestream:1db9dwo7b3zp91apt2i7e6f2ko",
+            "language": "x-world"
+          }
+        ]
+      },
+      {
+        "name": "Sofia Kenin / Bethanie Mattek-Sands v Mirra Andreeva / Diana Shnaider",
+        "id": "g9i8btzooyuf8skvu80kjxuc",
+        "fixture": {
+          "id": "g9i8btzooyuf8skvu80kjxuc",
+          "date": "2024-10-03",
+          "time": "05:10:00"
+        },
+        "asset": [
+          {
+            "id": "1db9dwo7b3zp91apt2i7e6f2ko",
+            "name": "TENNIS: WTA - China Open - Capital Group Diamond<BR>Starting at 05:00 GMT<BR>Sofia Kenin / Bethanie Mattek-Sands v Mirra Andreeva / Diana Shnaider<BR>07:00 GMT<BR>Shuai Zhang v Paula Badosa<BR>10:00 GMT<BR>Yuliia Starodubtseva v Coco Gauff<BR>11:30 GMT<BR>Elisabetta Cocciaretto / Liudmila Samsonova v Qianhui Tang / Yue Yuan<BR>",
+            "type": "urn:perform:livestream",
+            "urn": "urn:perform:livestream:1db9dwo7b3zp91apt2i7e6f2ko",
+            "language": "x-world"
+          }
+        ]
+      }
+    ]
+  }

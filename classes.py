@@ -7,6 +7,7 @@ class Shift:
         self.is_night_shift = is_night_shift # True if night shift, False if not
         if hardcoded_worker is None:   #worker to add to the shift hardcoded by admin
             self.list_of_workers = []
+            self.hardcoded_worker = None
         else:
             self.list_of_workers = [hardcoded_worker]
             self.hardcoded_worker = hardcoded_worker

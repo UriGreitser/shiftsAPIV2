@@ -1,58 +1,53 @@
 {
     "Nitay": [
-        "Sunday Middle",
-        "Monday Evening",
-        "Wednesday Morning",
-        "Friday Night",
-        "Saturday Evening"
-    ],
-    "Idan": [
         "Sunday Morning",
-        "Monday Evening",
-        "Tuesday Evening",
+        "Monday Morning",
+        "Thursday Evening",
+        "Friday Morning",
+        "Saturday Night"
+    ],
+    "Uri": [
+        "Sunday Evening",
+        "Tuesday Night",
         "Wednesday Evening",
-        "Thursday Night"
+        "Friday Evening",
+        "Saturday Morning"
     ],
     "Niro": [
-        "Monday Night",
-        "Tuesday Evening",
-        "Thursday Morning",
-        "Friday Morning",
+        "Sunday Middle",
+        "Monday Evening",
+        "Tuesday Morning",
+        "Thursday Night",
         "Saturday Morning"
     ],
     "Evgeniy": [
         "Sunday Night",
-        "Wednesday Evening",
         "Thursday Evening",
         "Friday Evening",
-        "Saturday Morning"
+        "Saturday Middle"
     ],
     "Natan": [
-        "Sunday Evening",
-        "Monday Morning",
-        "Tuesday Evening",
-        "Wednesday Night",
-        "Saturday Evening"
+        "Monday Night"
     ],
     "Israel": [
         "Sunday Middle",
-        "Monday Evening",
-        "Tuesday Night",
-        "Thursday Evening",
-        "Saturday Middle"
+        "Tuesday Evening",
+        "Wednesday Night",
+        "Friday Evening",
+        "Saturday Evening"
     ],
     "Sasha": [
         "Sunday Evening",
-        "Tuesday Morning",
-        "Thursday Evening",
-        "Friday Evening",
-        "Saturday Night"
+        "Monday Evening",
+        "Wednesday Morning",
+        "Thursday Morning",
+        "Friday Night"
     ],
-    "Amount of shifts to allocate at start": 35,
+    "Amount of shifts to allocate at start": 30,
     "Amount of shifts allocated/amount of total shifts entered": 1.0,
     "Shifts assignment status": "All shifts are assigned correctly!",
     "Amount of shifts remaining to assign": 0,
-    "Amount of workers assigned to all shifts": 35,
-    "TOTAL REMOVES": 1200212,
-    "TOTAL_total REMOVES": 7800490
+    "Amount of workers assigned to all shifts": 30,
+    "TOTAL REMOVES": 400122,
+    "TOTAL_total REMOVES": 1000036
 }

@@ -1157,10 +1157,10 @@ def upload_files():
         file_path = os.path.join(os.getcwd(), 'full_shifts.csv')
 
         list_of_workers = ReadFromGoogleSheets(prefrences_file)
-        list_of_shifts = CreateShiftsByConfigFile(shift_config,list_of_workers)
-        
+        list_of_shifts,specific_workers_list = CreateShiftsByConfigFile(shift_config,list_of_workers)
+        print("TEST")
         # PrintListOfShifts(list_of_shifts)
-        total_removes,list_of_shifts,list_of_workers,total_total_removes = CreateSchedule_Full(list_of_shifts,list_of_workers)
+        total_removes,list_of_shifts,list_of_workers,total_total_removes = CreateSchedule_Full(list_of_shifts,list_of_workers,specific_workers_list)
         WriteShiftsToCSVFile(list_of_shifts,filename="full_shifts.csv")
     
         # PrintWorkersAndTheirShifts(list_of_workers)

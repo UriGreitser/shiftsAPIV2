@@ -15,30 +15,30 @@ global_config = None
 global_prefrences = None
 shift_config = {
     "amount_of_workers_to_allocate_by_default": 2,
-    "hard_coded_shifts": ["Natan-Monday Night","Nitay-Monday Morning"],
+    "hard_coded_shifts": ["Uri-Monday Night","Nitay-Monday Morning"],
     "amount_of_workers_to_allocate_specific_shifts": {
         "Sunday Night": 1,
         "Monday Night": 1,
         "Tuesday Night": 1,
         "Wednesday Night": 1,
         "Thursday Night": 1,
-        "Friday Night": 1,
+        "Friday Night": 1, 
         "Saturday Night": 1,
         "Saturday Middle": 1,
         "Saturday Evening": 1,
-        "Sunday Morning": 1,
+        "Sunday Morning" : 1,
         "Monday Morning": 1,
-        "Tuesday Morning": 1,
+        "Tuesday Morning": 2,
         "Tuesday Evening": 1,
         "Wednesday Evening": 1,
         "Wednesday Morning": 1,
         "Thursday Morning": 1,
         "Friday Morning": 1,
-        "Friday Evening": 3,
+        "Friday Evening": 2,
     }
 }
 #firday morning ^^^
-prefrences_file = 'pref_sasha.csv'
+prefrences_file = 'pref_update.csv'
 
 API_TOKEN = "videotoken123" 
 
@@ -212,7 +212,7 @@ def ReadFromGoogleSheets(prefrences_file):
     return worker_list
 
 
-def CreateShiftsByConfigFile(shift_config,list_of_workers): # this isnt working right for shifts 22 and 23 - if i try to set them to 0 it doesnt.
+def  CreateShiftsByConfigFile(shift_config,list_of_workers): # this isnt working right for shifts 22 and 23 - if i try to set them to 0 it doesnt.
     list_of_shifts = []
     shift_config = replace_shift_keys(shift_config)
     #print("Allocating shifts again")
@@ -704,6 +704,79 @@ def PickShiftWithLeastWorkers(list_of_shifts,list_of_workers):
     # print("RANDOM SHIFT: ", random_shift.shift_id)
     return random_shift
 
+def CheckIfThereAreShiftsThatCannotEverBeCompleted(list_of_shifts,list_of_workers):
+    number_of_closed_days = {}
+    for worker in list_of_workers:
+        closed_days = 0
+        current_shift = 1
+        for x in range(1,8):
+            current_shift_1 = current_shift+1
+            current_shift_2 = current_shift+2
+            if current_shift in worker.closed_shifts_no_changes and current_shift_1 in worker.closed_shifts_no_changes and current_shift_2 in worker.closed_shifts_no_changes:
+                closed_days += 1
+            current_shift += 3
+        number_of_closed_days[worker.name] = closed_days
+    return number_of_closed_days
+
+def GoOverTheDictionaryOfProblematicWorkers(list_of_shifts,list_of_workers,dict_of_closed_days: dict):
+    #iterate over dict_of_clsoed_days keys and items
+    dict_of_everything = {}
+    for key,value in dict_of_closed_days.items():
+        worker = GetWorkerByName(list_of_workers,key)
+        worker_amount_of_shifs = worker.num_shifts_left_to_assign
+        if worker_amount_of_shifs + value == 7:
+            current_shift = 1
+            for x in range(1,8):
+                current_shift_1 = current_shift+1
+                current_shift_2 = current_shift+2  
+                list_of_small_shifts = []
+                list_of_all_shifts = [current_shift,current_shift_1,current_shift_2]    
+                if current_shift in worker.closed_shifts_no_changes:
+                    list_of_small_shifts.append(current_shift)
+                if current_shift_1 in worker.closed_shifts_no_changes:
+                    list_of_small_shifts.append(current_shift_1)
+                if current_shift_2 in worker.closed_shifts_no_changes:
+                    list_of_small_shifts.append(current_shift_2)
+                if len(list_of_small_shifts) == 2:
+                    #check what shift is in list of all shifts but not in list of small shifts
+                    for shift in list_of_all_shifts:
+                        if shift not in list_of_small_shifts:
+                            shift_to_remove = shift
+                    if shift_to_remove not in dict_of_everything:
+                        dict_of_everything[shift_to_remove] = [key]
+                    else:
+                        dict_of_everything[shift_to_remove].append(key)
+                current_shift += 3
+    return dict_of_everything            
+
+
+def Checks(list_of_shifts,list_of_workers,dict_of_everything):
+    error = ''
+    for key,value in dict_of_everything.items():
+        shift = GetShiftByID(list_of_shifts,key)
+        list_of_people = ListOfPeopleWhoCanDoSpecificShift(list_of_workers,shift)
+        if shift.amount_of_workers_to_allocate_no_changes < len(value):
+            error += f'ERROR - shift {Shift.PrintShiftIDByDayAndTime(shift)} needs {shift.amount_of_workers_to_allocate_no_changes} workers, but {value} HAVE to do that shift\n'
+            
+        #count the amount of people we need in general
+    count_shifts_to_allocate = 0
+    for shift in list_of_shifts:
+        count_shifts_to_allocate += shift.amount_of_workers_to_allocate_no_changes
+    count_worker_shifts = 0
+    for worker in list_of_workers:
+        count_worker_shifts += worker.num_shifts_left_to_assign
+    if count_shifts_to_allocate != count_worker_shifts:
+       error += f'ERROR - amount of shifts to allocate is not equal to the amount of shifts left to assign,shifts we need: {count_shifts_to_allocate}, shifts all workers can do: {count_worker_shifts}\n'
+    for shift in list_of_shifts:
+        #count how many people can do that shift
+        list_of_people = ListOfPeopleWhoCanDoSpecificShift(list_of_workers,shift)
+        #check if its smaller than the amount of people we need
+        if len(list_of_people) < shift.amount_of_workers_to_allocate_no_changes:
+           error += f'ERROR - shift {Shift.PrintShiftIDByDayAndTime(shift)} needs {shift.amount_of_workers_to_allocate_no_changes} workers, but only {len(list_of_people)} can do that shift\n'
+    return error
+    
+    
+    
 def CreateSchedule_UntilEveryShiftIsCoveredByOneWorker(list_of_shifts,list_of_workers):
     # print("ENTERED FIRST FUNCTION!")
     true_if_finished_correctly = None
@@ -866,14 +939,28 @@ def CreateSchedule_Full(list_of_shifts,list_of_workers,specific_workers_list):
     x=0
     done = False
     flag_restart = None
+    
+    list_of_workers = ReadFromGoogleSheets(prefrences_file)
+    list_of_shifts,specific_workers_list = CreateShiftsByConfigFile(shift_config,list_of_workers)
+    
+    dict_test = CheckIfThereAreShiftsThatCannotEverBeCompleted(list_of_shifts,list_of_workers)
+    print("TEST")
+    dict_of_everything = GoOverTheDictionaryOfProblematicWorkers(list_of_shifts,list_of_workers,dict_test)
+    error = Checks(list_of_shifts,list_of_workers,dict_of_everything)
+    if error != '':
+        return error,list_of_shifts,list_of_workers, total_total_removes
+    print(error)
     while(done == False):
         print("another iteration")
         list_of_workers = ReadFromGoogleSheets(prefrences_file)
         list_of_shifts,specific_workers_list = CreateShiftsByConfigFile(shift_config,list_of_workers)
+        print("CHECKS")
+        #checks
         flag = False
         CreateSchedule_AllocateSSpecificShifts(list_of_shifts,list_of_workers,specific_workers_list)
         for x in range(10):
             CreateSchedule_FillingAllProblematicShifts(list_of_shifts,list_of_workers)
+        print("CreateSchedule_UntilEveryShiftIsCoveredByOneWorker")
         while(flag == False):
           #  print("WE IN??")
             flag = CreateSchedule_UntilEveryShiftIsCoveredByOneWorker(list_of_shifts,list_of_workers)
@@ -903,6 +990,7 @@ def CreateSchedule_Full(list_of_shifts,list_of_workers,specific_workers_list):
         # print("removing, amount of shifts left to assign after change:",AmountOfRemainingShiftsToAssign(list_of_workers))
 
         flag = False
+        print("Create_Schedule_TryToAllocateAllRemainingShifts")
         while(flag == False):
             flag = Create_Schedule_TryToAllocateAllRemainingShifts(list_of_shifts,list_of_workers)
             # WriteShiftsToCSVFile(list_of_shifts,filename="shifts_after_second_function_test_exit.csv")
@@ -959,6 +1047,9 @@ def CreateSchedule_Full(list_of_shifts,list_of_workers,specific_workers_list):
 # list_of_workers = ReadFromGoogleSheets(prefrences_file)
 # list_of_shifts,specific_workers_list = CreateShiftsByConfigFile(shift_config,list_of_workers)
 # total_removes,list_of_shifts,list_of_workers,total_total_removes = CreateSchedule_Full(list_of_shifts,list_of_workers,specific_workers_list)
+# if total_removes[0] == "E":
+#     print(total_removes)
+#     exit()
 # WriteShiftsToCSVFile(list_of_shifts,filename="full_shifts_nitay.csv")
 # exit()
 
@@ -1161,7 +1252,13 @@ def upload_files():
         print("TEST")
         # PrintListOfShifts(list_of_shifts)
         total_removes,list_of_shifts,list_of_workers,total_total_removes = CreateSchedule_Full(list_of_shifts,list_of_workers,specific_workers_list)
+        if type(total_removes) != int:
+            print("HERE?")
+            return jsonify(total_removes), 501
+        print("TEST")
         WriteShiftsToCSVFile(list_of_shifts,filename="full_shifts.csv")
+        return send_file(file_path, as_attachment=True, mimetype='text/csv')
+
     
         # PrintWorkersAndTheirShifts(list_of_workers)
         stats = {}
@@ -1188,7 +1285,6 @@ def upload_files():
 
         
         # Send the file as a response
-        return send_file(file_path, as_attachment=True, mimetype='text/csv')
         
     
         # Now you can work with csv_data (DataFrame) and json_data (Python dict)

@@ -3,51 +3,51 @@
         "Sunday Morning",
         "Monday Morning",
         "Thursday Evening",
-        "Friday Morning",
-        "Saturday Night"
+        "Friday Night",
+        "Saturday Evening"
     ],
     "Uri": [
         "Sunday Evening",
-        "Tuesday Night",
-        "Wednesday Evening",
-        "Friday Evening",
+        "Tuesday Evening",
+        "Wednesday Night",
+        "Friday Morning",
         "Saturday Morning"
     ],
     "Niro": [
         "Sunday Middle",
         "Monday Evening",
         "Tuesday Morning",
-        "Thursday Night",
-        "Saturday Morning"
+        "Thursday Morning",
+        "Saturday Night"
     ],
     "Evgeniy": [
         "Sunday Night",
         "Thursday Evening",
         "Friday Evening",
-        "Saturday Middle"
+        "Saturday Morning"
     ],
     "Natan": [
         "Monday Night"
     ],
     "Israel": [
         "Sunday Middle",
-        "Tuesday Evening",
-        "Wednesday Night",
+        "Tuesday Night",
+        "Wednesday Evening",
         "Friday Evening",
-        "Saturday Evening"
+        "Saturday Middle"
     ],
     "Sasha": [
         "Sunday Evening",
         "Monday Evening",
         "Wednesday Morning",
-        "Thursday Morning",
-        "Friday Night"
+        "Thursday Night",
+        "Friday Evening"
     ],
     "Amount of shifts to allocate at start": 30,
     "Amount of shifts allocated/amount of total shifts entered": 1.0,
     "Shifts assignment status": "All shifts are assigned correctly!",
     "Amount of shifts remaining to assign": 0,
     "Amount of workers assigned to all shifts": 30,
-    "TOTAL REMOVES": 400122,
-    "TOTAL_total REMOVES": 1000036
+    "TOTAL REMOVES": 500231,
+    "TOTAL_total REMOVES": 1500086
 }

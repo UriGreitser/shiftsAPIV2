@@ -5,6 +5,7 @@ class Shift:
         self.list_of_workers_by_id = [] # list of workers by ID
         self.amount_of_workers_to_allocate_no_changes = amount_of_workers_to_allocate_no_changes
         self.is_night_shift = is_night_shift # True if night shift, False if not
+        self.protected_shifts = [] # shifts that are protected - no changes can be made to them
         if hardcoded_worker is None:   #worker to add to the shift hardcoded by admin
             self.list_of_workers = []
             self.hardcoded_worker = None

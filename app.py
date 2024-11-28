@@ -8,40 +8,106 @@ import csv
 import pandas as pd
 import functools
 import os
+import time
 
 app = Flask(__name__)
 stored_name = None
 global_config = None
 global_prefrences = None
-shift_config = {
-    "amount_of_workers_to_allocate_by_default": 2,
-    "hard_coded_shifts": ["Uri-Monday Night","Nitay-Monday Morning"],
-    "amount_of_workers_to_allocate_specific_shifts": {
-        "Sunday Night": 1,
-        "Monday Night": 1,
-        "Tuesday Night": 1,
-        "Wednesday Night": 1,
-        "Thursday Night": 1,
-        "Friday Night": 1, 
-        "Saturday Night": 1,
-        "Saturday Middle": 1,
-        "Saturday Evening": 1,
-        "Sunday Morning" : 1,
-        "Monday Morning": 1,
-        "Tuesday Morning": 2,
-        "Tuesday Evening": 1,
-        "Wednesday Evening": 1,
-        "Wednesday Morning": 1,
-        "Thursday Morning": 1,
-        "Friday Morning": 1,
-        "Friday Evening": 2,
-    }
-}
-#firday morning ^^^
-prefrences_file = 'pref_update.csv'
+
+prefrences_file = 'pref.csv'
+config_file = 'config.csv'
+
+
+
+shift_config = None
+def csv_to_json_test(file_path):
+    json_data = {}
+    full_json = {}
+    test_json = {}
+    
+    with open(file_path, mode="r", newline="") as csvfile:
+        csvreader = list(csv.reader(csvfile))  # Read all rows into a list
+        
+        # Skip the first line
+        rows = csvreader[1:]
+        
+        # Process the first 3 rows with 7 elements each
+        for row_idx, row in enumerate(rows[:5], start=1):
+            row_data = row[1:]  # Skip the first item in each row
+
+            if row_idx == 1:
+                add_to_json_key = 1
+                for i in range(0,7):
+                    if int(row_data[i])!=2:
+                        test_json[f'{add_to_json_key}'] = int(row_data[i])
+                    add_to_json_key+=3
+            if row_idx == 2:
+                add_to_json_key=2
+                for i in range(0,7):
+                    if int(row_data[i])!=2:
+                        test_json[f'{add_to_json_key}'] =  int(row_data[i])
+                    add_to_json_key+=3
+            if row_idx == 3:
+                add_to_json_key=3
+                for i in range(0,7):
+                    if int(row_data[i])!=2:
+                        test_json[f'{add_to_json_key}'] =  int(row_data[i])
+                    add_to_json_key+=3
+            if row_idx == 4:
+                if int(row_data[0])!=2:
+                    test_json["22"] =  int(row_data[0])
+            if row_idx == 5:
+                if int(row_data[0])!=2:
+                    test_json["23"] =  int(row_data[0])
+
+                    
+                # for i in range(1,8):  # Process the first 3 lines with 7 elements after skipping the first one
+                #     cell_value = row_data[i-1]
+                #     if cell_value != "2":
+                #         json_data[f"{(row_idx - 1) * 7 + i}"] = int(cell_value)  # Numbering from 1 to 21
+            # elif row_idx <= 5:  # Process the next 2 lines with 1 element each
+            #     cell_value = row_data[0]  # After skipping the first item, take the only element
+            #     line_number = 21 + (row_idx - 3)  # Line 22 for the 4th row, line 23 for the 5th row
+            #     if cell_value != "2":
+            #         json_data[f"{line_number}"] = int(cell_value)  # Add to JSON with number 22 or 23
+
+        # Now process the "Hardcoded Shifts" line (6th line)
+        hardcoded_shifts = []
+        hardcoded_row = rows[5][1:]  # The 6th line, skipping the first element
+        for cell in hardcoded_row:
+            if not cell:  # Stop when an empty cell is encountered
+                break
+            hardcoded_shifts.append(str(cell))  # Add each cell value to the list as a string
+
+        full_json["hard_coded_shifts"] = hardcoded_shifts  # Add the list of shifts to the JSON
+        # Adding data to full_json
+    full_json["amount_of_workers_to_allocate_by_default"] = 2
+    full_json["amount_of_workers_to_allocate_specific_shifts"] = json.dumps(test_json)
+    return json.dumps(full_json, indent=4)
+
+# shift_config = {
+#     "amount_of_workers_to_allocate_by_default": 2,
+#     "hard_coded_shifts": ["Nitay-Monday Morning"],
+#     "amount_of_workers_to_allocate_specific_shifts": {
+#         "Sunday Night": 1,
+#         "Monday Night": 1,
+#         "Tuesday Night": 1,
+#         "Wednesday Night": 1,
+#         "Thursday Night": 1,
+#         "Friday Night": 1,
+#         "Saturday Night": 1,
+#         "Thursday Evening": 1,
+#         "Sunday Middle": 1,
+#         "Saturday Middle": 1,
+#         "Saturday Evening": 1
+#     }
+# }
+# "Monday Morning": 1,
+
+# prefrences_file = 'latest_pref.csv'
 
 API_TOKEN = "videotoken123" 
-
 
 #mapping between numbers and shifts
 def replace_shift_keys(input_json):
@@ -169,6 +235,7 @@ def ReadFromGoogleSheets(prefrences_file):
                 days_off_taken = int(float(row[9]))
                 shifts_to_allocate = 5 - int(float(days_off_taken))
             except:
+                print(row)
                 print("FAIL")
             for i in range(1,8):
                 pref = row[i]
@@ -212,23 +279,26 @@ def ReadFromGoogleSheets(prefrences_file):
     return worker_list
 
 
-def  CreateShiftsByConfigFile(shift_config,list_of_workers): # this isnt working right for shifts 22 and 23 - if i try to set them to 0 it doesnt.
+def CreateShiftsByConfigFile(shift_config,list_of_workers): # this isnt working right for shifts 22 and 23 - if i try to set them to 0 it doesnt.
+    # print("TESTING")
     list_of_shifts = []
-    shift_config = replace_shift_keys(shift_config)
+    config = json.loads(shift_config)
+    # shift_config = replace_shift_keys(shift_config)
     #print("Allocating shifts again")
-    specific_shifts_dict = shift_config["amount_of_workers_to_allocate_specific_shifts"]
-    specific_workers_list = shift_config["hard_coded_shifts"]
-    # print("SPECIFIC SHIFTS DICT: ", specific_shifts_dict)
+    print(shift_config)
+    specific_shifts_dict = json.loads(config["amount_of_workers_to_allocate_specific_shifts"])
+    if isinstance(specific_shifts_dict, str):
+        specific_shifts_dict = json.loads(specific_shifts_dict)
 
+    specific_workers_list = config["hard_coded_shifts"]
+    # print("SPECIFIC SHIFTS DICT: ", specific_shifts_dict)
+    # print("HERE?")
+    # print(shift_config)``
     for i in range(1,24):
-        if i in shift_config["hard_coded_shifts"]:
-            amount_of_workers_to_allocate_no_changes = 1
-        else:
-            amount_of_workers_to_allocate_no_changes = shift_config["amount_of_workers_to_allocate_by_default"]
         if str(i) in specific_shifts_dict:
-            amount_of_workers_to_allocate_no_changes = shift_config["amount_of_workers_to_allocate_specific_shifts"][str(i)]
+            amount_of_workers_to_allocate_no_changes =specific_shifts_dict[str(i)]
         else:
-            amount_of_workers_to_allocate_no_changes = shift_config["amount_of_workers_to_allocate_by_default"]
+            amount_of_workers_to_allocate_no_changes = 2
         if i % 3 == 0:
             night_shift_bool = True
         else:
@@ -239,7 +309,7 @@ def  CreateShiftsByConfigFile(shift_config,list_of_workers): # this isnt working
         list_of_shifts.append(shift)
         
     if len(specific_workers_list)==0:
-        return list_of_shifts
+        return list_of_shifts,[]
 
 
     return list_of_shifts,specific_workers_list
@@ -405,9 +475,11 @@ def CreateShiftList() -> list:
     return shift_list
 
 # assigns the worker to the shift
-def AssignWorkerToShift(worker,shift,hard_coded=None):
+def AssignWorkerToShift(worker,shift,hard_coded=None,protected=None):
     if hard_coded==True:
         shift.hardcoded_worker = worker
+    if protected==True:
+        shift.protected_shifts.append(worker)
         
     shift.list_of_workers.append(worker)
     shift.number_of_assigned_workers += 1
@@ -749,6 +821,14 @@ def GoOverTheDictionaryOfProblematicWorkers(list_of_shifts,list_of_workers,dict_
                 current_shift += 3
     return dict_of_everything            
 
+def FillAllHaveToShifts(list_of_shifts,list_of_workers,dict_of_everything):
+    for key,value in dict_of_everything.items():
+        shift = GetShiftByID(list_of_shifts,key)
+        for worker_name in value:
+            worker = GetWorkerByName(list_of_workers,worker_name)
+            if worker not in shift.list_of_workers:
+                AssignWorkerToShift(worker,shift,protected=True)
+        
 
 def Checks(list_of_shifts,list_of_workers,dict_of_everything):
     error = ''
@@ -868,7 +948,6 @@ def Create_Schedule_TryToAllocateAllRemainingShifts(list_of_shifts,list_of_worke
             #     print("DEBUG")
             AssignWorkerToShift(worker,shift)
             # print("amount of shifts left to assign:",AmountOfRemainingShiftsToAssign(list_of_workers))
-
             # print("ASSIGNED WORKER: ", worker.name, "TO SHIFT: ", shift.shift_id)
             i += 1
             assigned_shifts += 1
@@ -887,11 +966,11 @@ def CreateSchedule_FillingAllProblematicShifts(list_of_shifts,list_of_workers):
     for shift in list_of_shifts:
         #check how many workers can do this shift
         list_of_people = ListOfPeopleWhoCanDoSpecificShift(list_of_workers,shift)
-        if len(list_of_people) == shift.amount_of_workers_to_allocate_no_changes:
+        if len(list_of_people) == (shift.amount_of_workers_to_allocate_no_changes-shift.number_of_assigned_workers):
             # print(shift.shift_id)
             for worker in list_of_people:
                 if CanWorkerDoShift(worker,shift):
-                    AssignWorkerToShift(worker,shift)
+                    AssignWorkerToShift(worker,shift,protected=True)
                 else:
                     print("WE HAD A PROBLEM IN THE FIRST FUNCTION")
                     exit()
@@ -931,129 +1010,119 @@ def CreateSchedule_AllocateSSpecificShifts(list_of_shifts,list_of_workers,specif
         worker_by_name = GetWorkerByName(list_of_workers,worker)
         AssignWorkerToShift(worker_by_name,shift_by_id,hard_coded=True)
 
-def CreateSchedule_Full(list_of_shifts,list_of_workers,specific_workers_list):
+def CreateSchedule_Full(list_of_shifts,list_of_workers,specific_workers_list,prefrences_file,shift_config):
     print("WERE IN")
     total_removes = 0
     total_total_removes = 0
+    random_save= 0
     total = 0
     x=0
     done = False
     flag_restart = None
     
     list_of_workers = ReadFromGoogleSheets(prefrences_file)
+    PrintListOfWorkers(list_of_workers)
+    print(shift_config)
     list_of_shifts,specific_workers_list = CreateShiftsByConfigFile(shift_config,list_of_workers)
-    
+
     dict_test = CheckIfThereAreShiftsThatCannotEverBeCompleted(list_of_shifts,list_of_workers)
     print("TEST")
+    PrintListOfShifts(list_of_shifts)
     dict_of_everything = GoOverTheDictionaryOfProblematicWorkers(list_of_shifts,list_of_workers,dict_test)
+    print(dict_of_everything)
     error = Checks(list_of_shifts,list_of_workers,dict_of_everything)
+    print(error)
+    print(specific_workers_list)
     if error != '':
         return error,list_of_shifts,list_of_workers, total_total_removes
     print(error)
+    
     while(done == False):
         print("another iteration")
-        list_of_workers = ReadFromGoogleSheets(prefrences_file)
-        list_of_shifts,specific_workers_list = CreateShiftsByConfigFile(shift_config,list_of_workers)
-        print("CHECKS")
-        #checks
         flag = False
-        CreateSchedule_AllocateSSpecificShifts(list_of_shifts,list_of_workers,specific_workers_list)
-        for x in range(10):
-            CreateSchedule_FillingAllProblematicShifts(list_of_shifts,list_of_workers)
-        print("CreateSchedule_UntilEveryShiftIsCoveredByOneWorker")
+        # list_of_workers = ReadFromGoogleSheets(prefrences_file)
+        # list_of_shifts,specific_workers_list = CreateShiftsByConfigFile(shift_config,list_of_workers)
+        # #checks
+        # flag = False
+        # if len(specific_workers_list) > 0:
+        #     CreateSchedule_AllocateSSpecificShifts(list_of_shifts,list_of_workers,specific_workers_list)
+        # for x in range(10):
+        #     CreateSchedule_FillingAllProblematicShifts(list_of_shifts,list_of_workers)
+        # FillAllHaveToShifts(list_of_shifts,list_of_workers,dict_of_everything)
+        
         while(flag == False):
+            print("CreateSchedule_UntilEveryShiftIsCoveredByOneWorker")
+            list_of_workers = ReadFromGoogleSheets(prefrences_file)
+            list_of_shifts,specific_workers_list = CreateShiftsByConfigFile(shift_config,list_of_workers)
+            if len(specific_workers_list) > 0:
+                CreateSchedule_AllocateSSpecificShifts(list_of_shifts,list_of_workers,specific_workers_list)
+            for x in range(2): #change back to 10, changed it to 2 for test purpose
+                CreateSchedule_FillingAllProblematicShifts(list_of_shifts,list_of_workers)
+            FillAllHaveToShifts(list_of_shifts,list_of_workers,dict_of_everything)
           #  print("WE IN??")
             flag = CreateSchedule_UntilEveryShiftIsCoveredByOneWorker(list_of_shifts,list_of_workers)
-            if flag == False:
-                # print("NEED TO REMOVE WORKERS FROM SHIFTS")
-                error_inside = 0
-                random_amount_of_removes = random.randint(3,10)
-                random_save = random_amount_of_removes
-                while (random_amount_of_removes > 0):
-                   # print("STUCK in first function")
-                    random_shift = random.choice(list_of_shifts)
-                    if random_shift.number_of_assigned_workers != 1:
-                        continue
-                    random_worker = random.choice(random_shift.list_of_workers)
-                    if random_shift.hardcoded_worker == random_worker:
-                        continue
-                    RemoveWorkerFromShift(random_worker,random_shift)
-                    random_amount_of_removes -= 1
-                    if error_inside > 1000:
-                        flag_restart = True
-                        break
-        if flag_restart == True:
-            flag_restart = False
-            continue
-        #print("DONE WITH FIRST PART")
-        # print("removing, amount of shifts left to assign before change:",AmountOfRemainingShiftsToAssign(list_of_workers))
-        # print("removing, amount of shifts left to assign after change:",AmountOfRemainingShiftsToAssign(list_of_workers))
-
-        flag = False
-        print("Create_Schedule_TryToAllocateAllRemainingShifts")
-        while(flag == False):
-            flag = Create_Schedule_TryToAllocateAllRemainingShifts(list_of_shifts,list_of_workers)
-            # WriteShiftsToCSVFile(list_of_shifts,filename="shifts_after_second_function_test_exit.csv")
-            # exit()
-            # print("EXITED THE SECOND PART")
-            if flag == False:
-                # print("NEED TO REMOVE WORKERS FROM SHIFTS")
-                random_amount_of_removes = random.randint(2,6)
-                random_save = random_amount_of_removes
-                error_removing = 0
-                while (random_amount_of_removes > 0):
-                    error_removing+=1
-                    # print("STUCK HERE")
-                    list_of_shifts_with_more_than_one_worker = []
-                    for shift in list_of_shifts:
-                        if shift.number_of_assigned_workers > 1:
-                            list_of_shifts_with_more_than_one_worker.append(shift)
-                    if len(list_of_shifts_with_more_than_one_worker) == 0:
-                        break
-                    if error_removing > 1000000:
-                        print("removingggggg, amount of shifts left to assign:",AmountOfRemainingShiftsToAssign(list_of_workers))
-                        print("")
-                        list_of_workers = ReadFromGoogleSheets(prefrences_file)
-                        list_of_shifts = CreateShiftsByConfigFile(shift_config,list_of_workers)
-                        CreateSchedule_UntilEveryShiftIsCoveredByOneWorker(list_of_shifts,list_of_workers)
-                        # list_of_shifts,list_of_workers =AllocateWorkersWhenAmountOfAvailablePeopleEqualsAmountOfNeededPeople(list_of_shifts,list_of_workers)
-                        WriteShiftsToCSVFile(list_of_shifts,filename="WHA!!!!T.csv")
-                        error_removing = 0
-                        break
-                    random_shift = random.choice(list_of_shifts_with_more_than_one_worker) 
-                    random_worker = random.choice(random_shift.list_of_workers)
-                    if random_shift.number_of_assigned_workers < 2:
-                        continue
-                    if random_shift.hardcoded_worker == random_worker:
-                        continue
-                    RemoveWorkerFromShift(random_worker,random_shift)
-                    random_amount_of_removes -= 1
-                total_removes += random_save
-                total += random_save
-                if total_removes > 50000:
-                    #print("STARTING OVER WITH NEW ALLOCATION FOR bc of total_removes")
-                    #print amount of shifts left to allocate
-                    #print("amount of shifts left to assign:",AmountOfRemainingShiftsToAssign(list_of_workers))
-                    total += total_removes
-                    total_removes = 0
-                    total_total_removes += total
-                    break
+            if flag==True:
+                WriteShiftsToCSVFile(list_of_shifts,filename="shiftsafterfirstfunctiontest.csv")
             else:
+                continue
+        flag = False
+        while(flag == False):
+            print("Create_Schedule_TryToAllocateAllRemainingShifts")
+            flag = Create_Schedule_TryToAllocateAllRemainingShifts(list_of_shifts,list_of_workers)
+            if flag == True:
+                WriteShiftsToCSVFile(list_of_shifts,filename="tttttttttttttttttttttttttttt.csv")
+            if flag == False:
+                WriteShiftsToCSVFile(list_of_shifts,filename="shiftsaftersecondfunctiontest.csv")
+                # print(shift_config)
+                # print("NEED TO REMOVE WORKERS FROM SHIFTS")
+                shifts_to_remove_from = []
+                for shift in list_of_shifts:
+                    if shift.number_of_assigned_workers > 1 and shift.hardcoded_worker == None and len(shift.protected_shifts) == 0:
+                        shifts_to_remove_from.append(shift)
+                if (len(shifts_to_remove_from) == 0):
+                    print("LEN IS 0")
+                # WriteShiftsToCSVFile(list_of_shifts,filename="shifts_before_second_function_test.csv")
+                # print("shifts_to_remove_from",PrintListOfShifts(shifts_to_remove_from))
+                random_amount_of_removes = random.randint(0,len(shifts_to_remove_from))
+                random_save += random_amount_of_removes
+                total_removes += random_amount_of_removes
+                # print("REMOVING")
+                while (random_amount_of_removes > 0):
+                    # print("STUCK HERE")
+                    random_shift = random.choice(shifts_to_remove_from)
+                    random_worker = random.choice(random_shift.list_of_workers)
+                    RemoveWorkerFromShift(random_worker,random_shift)
+                    shifts_to_remove_from.remove(random_shift)
+                    random_amount_of_removes -= 1
+                if random_save > 1000:
+                    random_save = 0
+                    flag_restart = True
+                    print("RESTARTING")
+                    break
+                else:
+                    continue
+            else:
+                print("DONE")
+                flag_restart = False
                 done = True
-                break
+                print("YES!")
+                break   
+        if flag_restart == True:
+            continue
+        else:
+            break
     return total,list_of_shifts,list_of_workers, total_total_removes
 
 # print("STARTING")
 # list_of_workers = ReadFromGoogleSheets(prefrences_file)
+# shift_config = csv_to_json_test("testfunc.csv")
+# print(shift_config)
 # list_of_shifts,specific_workers_list = CreateShiftsByConfigFile(shift_config,list_of_workers)
-# total_removes,list_of_shifts,list_of_workers,total_total_removes = CreateSchedule_Full(list_of_shifts,list_of_workers,specific_workers_list)
-# if total_removes[0] == "E":
-#     print(total_removes)
-#     exit()
+# #read csv from testfunc.csv
+# total_removes,list_of_shifts,list_of_workers,total_total_removes = CreateSchedule_Full(list_of_shifts,list_of_workers,specific_workers_list,prefrences_file,shift_config)
+# print(total_removes)
 # WriteShiftsToCSVFile(list_of_shifts,filename="full_shifts_nitay.csv")
 # exit()
-
-
 
 # POST endpoint to receive a JSON file and store it in a global variable
 @app.route('/api/upload_json', methods=['POST'])
@@ -1208,6 +1277,93 @@ def get_stats():
     else:
         return jsonify({'error': 'Stats file not found'}), 404
 
+@app.route('/api/upload_csv_test', methods=['POST'])
+def upload_csv_test():
+    # Check if the file is part of the request
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part in the request"}), 400
+
+    file = request.files['file']
+    
+    # Check if the file has a valid name
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
+
+    # Save the file
+    save_path = os.path.join(os.getcwd(), "TESTTTTTTTTTTTTTTTTTTTTTT.csv")
+    file.save(save_path)
+
+    return jsonify({"message": "File saved successfully", "file_path": save_path}), 200
+
+@app.route('/api/create', methods=['POST'])
+def create_all_shifts():
+    global shift_config
+    # Ensure both files are in the request
+    if 'pref' not in request.files or 'config' not in request.files:
+        return jsonify({"error": "Both 'pref' and 'config' files must be provided"}), 400
+
+    pref_file = request.files['pref']
+    config_file = request.files['config']
+    
+    # Ensure the files have names
+    if pref_file.filename == '' or config_file.filename == '':
+        return jsonify({"error": "One or both files are missing"}), 400
+
+    try:
+        # Save files in the current directory with specified names
+        pref_save_path = os.path.join(os.getcwd(), 'pref.csv')
+        config_save_path = os.path.join(os.getcwd(), 'config.csv')
+
+        pref_file.save(pref_save_path)
+        config_file.save(config_save_path)
+        time.sleep(1)
+
+
+    except Exception as e:
+        return jsonify({"error": "ERRO!!"}), 500
+    
+    print("STARTING")
+
+    list_of_workers = ReadFromGoogleSheets(pref_save_path)
+
+    shift_config = csv_to_json_test(config_save_path)
+    print(shift_config)
+
+    list_of_shifts,specific_workers_list = CreateShiftsByConfigFile(shift_config,list_of_workers)
+    #read csv from testfunc.csv
+    total_removes,list_of_shifts,list_of_workers,total_total_removes = CreateSchedule_Full(list_of_shifts,list_of_workers,specific_workers_list,prefrences_file,shift_config)
+    print(total_removes)
+    WriteShiftsToCSVFile(list_of_shifts,filename="full_shifts_nitay.csv")
+    
+    output_file_path = os.path.join(os.getcwd(), "full_shifts_nitay.csv")
+    
+    stats = {}
+    stats = AddWorkersAndTheirShiftsToStats(list_of_workers,stats)
+    # Collect stats and store them in the dictionary
+    stats["Amount of shifts to allocate at start"] = AmountOfShiftsToAllocateAtStart(list_of_shifts)
+    stats["Amount of shifts allocated/amount of total shifts entered"] = NumberOfWorkersAssignedToAllShifts(list_of_shifts) / AmountOfShiftsToAllocateAtStart(list_of_shifts)
+
+    booli = CheckAllShiftsAssigned(list_of_shifts)
+    if booli:
+        stats["Shifts assignment status"] = "All shifts are assigned correctly!"
+    else:
+        stats["Shifts assignment status"] = "ERROR - NOT ALL SHIFTS ARE ASSIGNED CORRECTLY"
+
+    stats["Amount of shifts remaining to assign"] = AmountOfRemainingShiftsToAssign(list_of_workers)
+    stats["Amount of workers assigned to all shifts"] = NumberOfWorkersAssignedToAllShifts(list_of_shifts)
+    stats["TOTAL REMOVES"] = total_removes
+    stats["TOTAL_total REMOVES"] = total_total_removes
+    
+    with open('stats.json', 'w') as json_file:
+        json.dump(stats, json_file, indent=4)
+    # Return the file as a response
+    return send_file(
+        output_file_path,
+        as_attachment=True,
+        download_name="full_shifts_nitay.csv",
+        mimetype="application/json"
+    )
+
 
 @app.route('/api/create_all_shifts', methods=['POST'])
 @token_required
@@ -1225,6 +1381,54 @@ def upload_files():
     # Check if the files have valid filenames
     if csv_file.filename == '' or json_file.filename == '':
         return jsonify({'error': 'No file selected for one or both of the files.'}), 400
+    # Process the CSV file
+    csv_data = pd.read_csv(io.StringIO(csv_file.stream.read().decode('UTF-8')), header=None)
+    
+    # Define your own column names (adapt as necessary)
+    csv_data.columns = ['Name', 'Day1', 'Day2', 'Day3', 'Day4', 'Day5', 'Day6', 'Day7', 'Count', 'Value']
+
+    # Define the path to save the file (same directory as the script)
+    save_path = os.path.join(os.getcwd(), 'prefrences.csv')
+    
+    # Save the CSV to a file without renaming columns
+    csv_data.to_csv(save_path, index=False,header=False)
+
+    # Process the JSON file
+    json_content = json.load(json_file)
+            
+    # Store the parsed JSON content in the global variable
+    shift_config = json_content
+    
+    file_path = os.path.join(os.getcwd(), 'full_shifts.csv')
+
+    list_of_workers = ReadFromGoogleSheets(prefrences_file)
+    list_of_shifts,specific_workers_list = CreateShiftsByConfigFile(shift_config,list_of_workers)
+    print("TEST")
+    # PrintListOfShifts(list_of_shifts)
+    total_removes,list_of_shifts,list_of_workers,total_total_removes = CreateSchedule_Full(list_of_shifts,list_of_workers,specific_workers_list)
+    if type(total_removes) != int:
+        print("HERE?")
+        return jsonify(total_removes), 501
+    print("TEST")
+    WriteShiftsToCSVFile(list_of_shifts,filename="full_shifts.csv")
+    return send_file(file_path, as_attachment=True, mimetype='text/csv')
+
+@app.route('/api/new_func_create', methods=['POST'])
+def newfunctioncreate():
+    global shift_config
+
+    # Check if both files are present in the request
+    if 'pref' not in request.files or 'config' not in request.files:
+        return jsonify({'error': 'Both csv_file and json_file are required.'}), 400
+    
+    # Access the files from the request
+    csv_file = request.files['pref']
+    config_csv = request.files['config']
+    
+    
+    # Check if the files have valid filenames
+    if csv_file.filename == '' or config_csv.filename == '':
+        return jsonify({'error': 'No file selected for one or both of the files.'}), 400
     
     try:
         # Process the CSV file
@@ -1238,26 +1442,45 @@ def upload_files():
         
         # Save the CSV to a file without renaming columns
         csv_data.to_csv(save_path, index=False,header=False)
-
-        # Process the JSON file
-        json_content = json.load(json_file)
-                
-        # Store the parsed JSON content in the global variable
-        shift_config = json_content
         
-        file_path = os.path.join(os.getcwd(), 'full_shifts.csv')
+         # Process the CSV file
+        csv_data_2 = pd.read_csv(io.StringIO(config_csv.stream.read().decode('UTF-8')), header=None)
+        
+        # Define the path to save the file (same directory as the script)
+        save_path2 = os.path.join(os.getcwd(), 'config.csv')
+        
+        # Save the CSV to a file without renaming columns
+        csv_data_2.to_csv(save_path2,header=False,index=False)
+        
+        json_file = csv_to_json_test('config.csv')
+        # Process the JSON file
+        json_content = json.loads(json_file)
 
-        list_of_workers = ReadFromGoogleSheets(prefrences_file)
+        # Store the parsed JSON content in the global variable
+        global shift_config
+        shift_config = json_content
+
+        # print(shift_config)
+        file_path = os.path.join(os.getcwd(), 'full_shifts.csv')
+        
+        with open('pref_file_new.json', 'w') as pref_file:
+            json.dump(json_content, pref_file, indent=4)
+            
+        list_of_workers = ReadFromGoogleSheets(save_path)
+        # PrintListOfWorkers(list_of_workers)
+        # print("YES?")
         list_of_shifts,specific_workers_list = CreateShiftsByConfigFile(shift_config,list_of_workers)
-        print("TEST")
+        
         # PrintListOfShifts(list_of_shifts)
-        total_removes,list_of_shifts,list_of_workers,total_total_removes = CreateSchedule_Full(list_of_shifts,list_of_workers,specific_workers_list)
+        # print("ALMOST")
+        total_removes,list_of_shifts,list_of_workers,total_total_removes = CreateSchedule_Full(list_of_shifts,list_of_workers,specific_workers_list,save_path,shift_config)
         if type(total_removes) != int:
             print("HERE?")
             return jsonify(total_removes), 501
         print("TEST")
         WriteShiftsToCSVFile(list_of_shifts,filename="full_shifts.csv")
         return send_file(file_path, as_attachment=True, mimetype='text/csv')
+
 
     
         # PrintWorkersAndTheirShifts(list_of_workers)

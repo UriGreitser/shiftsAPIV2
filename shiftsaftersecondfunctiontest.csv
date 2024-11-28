@@ -1,0 +1,6 @@
+Shift Type,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday
+Morning,"['Nitay', 'Yivgeny']","['Israel', 'Yivgeny']",['Sasha'],['Niro'],['Nitay'],['Uri'],['Idan']
+Evening,"['Idan', 'Israel']","['Nitay', 'Sasha']","['Yivgeny', 'Idan']","['Israel', 'Idan']","['Yivgeny', 'Uri']",['Sasha'],['Niro']
+Night,['Niro'],['Idan'],['Israel'],['Uri'],['Sasha'],['Yivgeny'],['Nitay']
+Sunday middle shift,Uri
+Saturday middle shift,Sasha

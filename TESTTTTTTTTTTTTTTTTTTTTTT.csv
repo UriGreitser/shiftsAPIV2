@@ -1,0 +1,7 @@
+Shift\Day,Sunday,Monday,Tuesday,Wedenesday,Thursday,Friday,Saturday
+Morning,1,1,1,1,1,2,2
+Evening,2,2,2,1,2,2,2
+Night,1,1,1,1,1,1,1
+Saturday Middle,1,,,,,,
+Sunday Middle,1,,,,,,
+Hardcoded Shifts,Idan-Saturday Morning,Uri-Wednesday Night,,,,

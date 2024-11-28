@@ -1,6 +1,7 @@
-Niro,No Morning,Open,Open,Open,Open,Open,Open,2,0
-Evgeniy,Open,Open,No Morning and Evening,No Evening and Night,Closed,Open,Open,1,0
-Uri,Open,No Evening,Open,No Evening,Open,Open,Open,1,0
-Israel,Open,Open,Open,Open,Open,No Evening and Night,Open,1,0
-Sasha,No Morning,Open,No Morning and Night,No Morning and Night,Open,Open,No Evening and Night,1,0
-Nitay,No Evening and Night,Open,Open,No Morning,Open,No Night,Open,1,0
+Evgeniy,No Evening,Closed,No Evening,Open,Open,Open,No Evening and Night,1,0
+Niro,No Morning,Open,Open,No Evening and Night,No Evening and Night,Open,Open,1,0
+Israel,Open,Open,Open,No Evening and Night,Open,Open,Open,1,0
+Nitay,No Night,Open,Open,Open,Open,No Evening and Night,No Night,1,0
+Sasha,Open,Open,No Morning,No Evening and Night,Open,Open,No Night,1,0
+Uri,Open,No Evening,No Morning,Open,Open,Open,No Evening and Night,1,0
+Idan,No Evening,No Evening,Open,Closed,Open,No Morning,Open,1,0

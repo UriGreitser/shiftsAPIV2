@@ -1,58 +1,65 @@
 {
-    "Yivgeny": [
-        "Sunday Morning",
+    "niiiii": [
+        "Sunday Night",
+        "Tuesday Morning",
+        "Wednesday Evening",
+        "Thursday Morning",
+        "Friday Morning"
+    ],
+    "test1": [
+        "Sunday Evening",
         "Monday Morning",
+        "Wednesday Night",
+        "Friday Evening",
+        "Saturday Evening"
+    ],
+    "test2": [
+        "Sunday Evening",
+        "Monday Night",
+        "Tuesday Evening",
+        "Wednesday Morning",
+        "Saturday Middle"
+    ],
+    "test23": [
+        "Monday Morning",
+        "Wednesday Evening",
         "Thursday Evening",
         "Friday Night",
         "Saturday Evening"
     ],
-    "Niro": [
-        "Sunday Night",
+    "saaa": [
+        "Sunday Morning",
         "Tuesday Morning",
-        "Wednesday Morning",
+        "Thursday Morning",
         "Friday Morning",
-        "Saturday Evening"
+        "Saturday Night"
     ],
-    "Idan": [
-        "Sunday Evening",
-        "Monday Night",
-        "Tuesday Evening",
-        "Friday Evening",
-        "Saturday Morning"
-    ],
-    "Israel": [
-        "Sunday Evening",
-        "Monday Morning",
+    "niro": [
+        "Sunday Middle",
+        "Monday Evening",
         "Tuesday Night",
         "Wednesday Evening",
         "Saturday Morning"
     ],
-    "Nitay": [
+    "uri": [
         "Sunday Morning",
-        "Tuesday Evening",
-        "Wednesday Evening",
-        "Thursday Morning",
-        "Saturday Night"
-    ],
-    "Sasha": [
         "Monday Evening",
-        "Tuesday Morning",
+        "Wednesday Morning",
+        "Thursday Evening",
+        "Saturday Morning"
+    ],
+    "nutay": [
+        "Sunday Middle",
+        "Tuesday Evening",
         "Thursday Night",
         "Friday Evening",
         "Saturday Middle"
     ],
-    "Uri": [
-        "Sunday Middle",
-        "Monday Evening",
-        "Wednesday Night",
-        "Thursday Evening",
-        "Friday Morning"
-    ],
-    "Amount of shifts to allocate at start": 35,
+    "Amount of shifts to allocate at start": 40,
     "Amount of shifts allocated/amount of total shifts entered": 1.0,
     "Shifts assignment status": "All shifts are assigned correctly!",
     "Amount of shifts remaining to assign": 0,
-    "Amount of workers assigned to all shifts": 35,
+    "Amount of workers assigned to all shifts": 40,
     "TOTAL REMOVES": 0,
     "TOTAL_total REMOVES": 0
 }

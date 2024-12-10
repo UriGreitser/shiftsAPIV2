@@ -1,6 +1,6 @@
 Shift Type,Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday
-Morning,"['Yivgeny', 'Nitay']","['Yivgeny', 'Israel']","['Sasha', 'Niro']",['Niro'],['Nitay'],"['Uri', 'Niro']","['Idan', 'Israel']"
-Evening,"['Idan', 'Israel']","['Sasha', 'Uri']","['Idan', 'Nitay']","['Israel', 'Nitay']","['Uri', 'Yivgeny']","['Sasha', 'Idan']","['Niro', 'Yivgeny']"
-Night,['Niro'],['Idan'],['Israel'],['Uri'],['Sasha'],['Yivgeny'],['Nitay']
-Sunday middle shift,Uri
-Saturday middle shift,Sasha
+Morning,"['saaa', 'uri']","['test23', 'test1']","['saaa', 'niiiii']","['test2', 'uri']","['niiiii', 'saaa']","['saaa', 'niiiii']","['uri', 'niro']"
+Evening,"['test2', 'test1']","['uri', 'niro']","['test2', 'nutay']","['niro', 'niiiii', 'test23']","['uri', 'test23']","['test1', 'nutay']","['test23', 'test1']"
+Night,['niiiii'],['test2'],['niro'],['test1'],['nutay'],['test23'],['saaa']
+Sunday middle shift,niro,nutay
+Saturday middle shift,nutay,test2

@@ -1034,7 +1034,8 @@ def CreateSchedule_Full(list_of_shifts,list_of_workers,specific_workers_list,pre
     print(error)
     print(specific_workers_list)
     if error != '':
-        return error,list_of_shifts,list_of_workers, total_total_removes
+        return error,"ERROR",list_of_workers, total_total_removes
+    
     print(error)
     
     while(done == False):
@@ -1051,7 +1052,7 @@ def CreateSchedule_Full(list_of_shifts,list_of_workers,specific_workers_list,pre
         # FillAllHaveToShifts(list_of_shifts,list_of_workers,dict_of_everything)
         
         while(flag == False):
-            print("CreateSchedule_UntilEveryShiftIsCoveredByOneWorker")
+            # print("CreateSchedule_UntilEveryShiftIsCoveredByOneWorker")
             list_of_workers = ReadFromGoogleSheets(prefrences_file)
             list_of_shifts,specific_workers_list = CreateShiftsByConfigFile(shift_config,list_of_workers)
             if len(specific_workers_list) > 0:
@@ -1295,7 +1296,9 @@ def upload_csv_test():
 
     return jsonify({"message": "File saved successfully", "file_path": save_path}), 200
 
+# this is the current working function for december 2024. all others do not work besides get stats.
 @app.route('/api/create', methods=['POST'])
+@token_required
 def create_all_shifts():
     global shift_config
     # Ensure both files are in the request
@@ -1311,27 +1314,37 @@ def create_all_shifts():
 
     try:
         # Save files in the current directory with specified names
+        pref_save_path_temp = os.path.join(os.getcwd(), 'pref_temp.csv')
         pref_save_path = os.path.join(os.getcwd(), 'pref.csv')
         config_save_path = os.path.join(os.getcwd(), 'config.csv')
 
-        pref_file.save(pref_save_path)
+        pref_file.save(pref_save_path_temp)
         config_file.save(config_save_path)
         time.sleep(1)
-
+    #function that read the csv file from pref_temp and saves it to pref.csv, but it removes the first line and the first element from every line
+        with open(pref_save_path_temp, 'r') as f:
+            lines = list(csv.reader(f))  # Read the CSV file as a list of rows
+            with open(pref_save_path, 'w', newline='') as f:
+                writer = csv.writer(f)  # Create a CSV writer object
+                for line in lines[1:]:  # Skip the first line (header)
+                    writer.writerow(line[1:])  # Skip the first element of each line
 
     except Exception as e:
-        return jsonify({"error": "ERRO!!"}), 500
+        return jsonify({"error": "ERROR!!"}), 500
     
     print("STARTING")
 
     list_of_workers = ReadFromGoogleSheets(pref_save_path)
 
     shift_config = csv_to_json_test(config_save_path)
-    print(shift_config)
+    # print(shift_config)
 
     list_of_shifts,specific_workers_list = CreateShiftsByConfigFile(shift_config,list_of_workers)
     #read csv from testfunc.csv
     total_removes,list_of_shifts,list_of_workers,total_total_removes = CreateSchedule_Full(list_of_shifts,list_of_workers,specific_workers_list,prefrences_file,shift_config)
+    if list_of_shifts == "ERROR":
+        return jsonify(total_removes), 418
+    
     print(total_removes)
     WriteShiftsToCSVFile(list_of_shifts,filename="full_shifts_nitay.csv")
     
@@ -1364,6 +1377,10 @@ def create_all_shifts():
         mimetype="application/json"
     )
 
+@app.route('/api/is_server_up', methods=['GET'])
+@token_required
+def is_server_up():
+    return jsonify({"message": "Server is up!"}), 200
 
 @app.route('/api/create_all_shifts', methods=['POST'])
 @token_required

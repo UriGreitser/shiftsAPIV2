@@ -11,6 +11,11 @@ import os
 import time
 import subprocess
 import shutil
+import logging
+import threading
+from datetime import datetime, timezone
+from urllib import request as urllib_request
+from urllib.error import URLError
 
 app = Flask(__name__)
 stored_name = None
@@ -112,6 +117,81 @@ def csv_to_json_test(file_path):
 API_TOKEN = "videotoken123"
 
 ffmpeg_processes = {}
+
+ffmpeg_logger = logging.getLogger("ffmpeg_runner")
+ffmpeg_logger.setLevel(logging.INFO)
+if not ffmpeg_logger.handlers:
+    _log_handler = logging.StreamHandler()
+    _log_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+    ffmpeg_logger.addHandler(_log_handler)
+
+
+def append_ffmpeg_log(pid, message):
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    entry = f"[{timestamp}] {message}"
+    process_info = ffmpeg_processes.get(pid)
+    if process_info is not None:
+        process_info["logs"].append(entry)
+    ffmpeg_logger.info("[pid=%s] %s", pid, message)
+
+
+def start_ffmpeg_log_capture(process):
+    pid = process.pid
+
+    def read_stream(stream, label):
+        try:
+            for line in iter(stream.readline, ""):
+                if not line:
+                    break
+                append_ffmpeg_log(pid, f"[{label}] {line.rstrip()}")
+        finally:
+            stream.close()
+
+    threading.Thread(target=read_stream, args=(process.stdout, "stdout"), daemon=True).start()
+    threading.Thread(target=read_stream, args=(process.stderr, "stderr"), daemon=True).start()
+
+    def wait_for_process():
+        exit_code = process.wait()
+        process_info = ffmpeg_processes.get(pid)
+        if process_info is not None:
+            process_info["running"] = False
+            process_info["exit_code"] = exit_code
+        append_ffmpeg_log(pid, f"Process exited with code {exit_code}")
+
+    threading.Thread(target=wait_for_process, daemon=True).start()
+
+
+_keepalive_thread_started = False
+
+
+def start_keepalive_thread():
+    global _keepalive_thread_started
+    if _keepalive_thread_started:
+        return
+
+    enabled = os.environ.get("KEEPALIVE_ENABLED", "true").lower() == "true"
+    base_url = os.environ.get("RENDER_EXTERNAL_URL") or os.environ.get("KEEPALIVE_URL")
+    if not enabled or not base_url:
+        return
+
+    interval = int(os.environ.get("KEEPALIVE_INTERVAL_SECONDS", "60"))
+    ping_url = f"{base_url.rstrip('/')}/api/keepalive"
+    _keepalive_thread_started = True
+
+    def keepalive_loop():
+        while True:
+            try:
+                with urllib_request.urlopen(ping_url, timeout=10) as response:
+                    ffmpeg_logger.info(
+                        "Keepalive ping OK (%s)",
+                        response.status,
+                    )
+            except (URLError, TimeoutError, OSError) as error:
+                ffmpeg_logger.warning("Keepalive ping failed: %s", error)
+            time.sleep(interval)
+
+    threading.Thread(target=keepalive_loop, daemon=True, name="keepalive").start()
+    ffmpeg_logger.info("Keepalive thread started: %s every %ss", ping_url, interval)
 
 
 def build_ffmpeg_command(template, ip, port, stream_url):
@@ -1591,6 +1671,17 @@ def newfunctioncreate():
         return jsonify({'error': str(e)}), 500
     
     
+@app.route('/api/keepalive', methods=['GET'])
+def keepalive():
+    start_keepalive_thread()
+    return jsonify({
+        "status": "ok",
+        "active_ffmpeg_processes": sum(
+            1 for process in ffmpeg_processes.values() if process.get("running")
+        ),
+    }), 200
+
+
 @app.route('/ffmpeg')
 def ffmpeg_page():
     return send_from_directory('static', 'ffmpeg.html')
@@ -1614,19 +1705,32 @@ def run_ffmpeg():
     stream_url = str(data.get('stream_url', '')).strip()
     ffmpeg_command = str(data.get('ffmpeg_command', '')).strip()
 
+    ffmpeg_logger.info(
+        "Run FFmpeg requested: ip=%s port=%s stream_url=%s command_template=%s",
+        ip,
+        port,
+        stream_url,
+        ffmpeg_command,
+    )
+
     if not all([ip, port, stream_url, ffmpeg_command]):
+        ffmpeg_logger.warning("Run FFmpeg rejected: missing required fields")
         return jsonify({'error': 'ip, port, stream_url, and ffmpeg_command are required'}), 400
 
     resolved_command = build_ffmpeg_command(ffmpeg_command, ip, port, stream_url)
+    ffmpeg_logger.info("Run FFmpeg resolved command: %s", resolved_command)
 
     try:
         process = subprocess.Popen(
             resolved_command,
             shell=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1,
         )
     except Exception as e:
+        ffmpeg_logger.exception("Failed to start ffmpeg")
         return jsonify({'error': f'Failed to start ffmpeg: {str(e)}'}), 500
 
     ffmpeg_processes[process.pid] = {
@@ -1634,13 +1738,46 @@ def run_ffmpeg():
         'command': resolved_command,
         'ip': ip,
         'port': port,
-        'stream_url': stream_url
+        'stream_url': stream_url,
+        'logs': [],
+        'running': True,
+        'exit_code': None,
+        'started_at': datetime.now(timezone.utc).isoformat(),
     }
+
+    append_ffmpeg_log(process.pid, "Run FFmpeg button clicked")
+    append_ffmpeg_log(process.pid, f"IP: {ip}")
+    append_ffmpeg_log(process.pid, f"Port: {port}")
+    append_ffmpeg_log(process.pid, f"Stream URL: {stream_url}")
+    append_ffmpeg_log(process.pid, f"Resolved command: {resolved_command}")
+    append_ffmpeg_log(process.pid, "FFmpeg process started")
+    start_ffmpeg_log_capture(process)
 
     return jsonify({
         'message': 'FFmpeg started successfully',
         'pid': process.pid,
-        'command': resolved_command
+        'command': resolved_command,
+        'logs': ffmpeg_processes[process.pid]['logs'],
+    }), 200
+
+
+@app.route('/api/ffmpeg/logs/<int:pid>', methods=['GET'])
+@token_required
+def get_ffmpeg_logs(pid):
+    process_info = ffmpeg_processes.get(pid)
+    if process_info is None:
+        return jsonify({'error': 'Process not found'}), 404
+
+    since = request.args.get('since', 0, type=int)
+    logs = process_info.get('logs', [])
+
+    return jsonify({
+        'pid': pid,
+        'running': process_info.get('running', False),
+        'exit_code': process_info.get('exit_code'),
+        'command': process_info.get('command'),
+        'logs': logs[since:],
+        'next_since': len(logs),
     }), 200
 
 
@@ -1658,6 +1795,8 @@ def home():
         mimetype='text/csv',
         headers={"Content-Disposition": "attachment;filename=name.csv"}
     )
+
+start_keepalive_thread()
 
 if __name__ == '__main__':
     app.run(debug=True)  # Enable debugging for easier development

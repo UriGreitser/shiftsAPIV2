@@ -78,6 +78,15 @@
     }
     .output.error { border-color: #ef4444; background: #fef2f2; }
     .output.success { border-color: #22c55e; background: #f0fdf4; }
+    .output.logs {
+      display: block;
+      max-height: 320px;
+      overflow-y: auto;
+      background: #0f172a;
+      color: #e2e8f0;
+      border-color: #334155;
+    }
+    .output.logs.empty { color: #94a3b8; }
     code { background: #eee; padding: 2px 6px; border-radius: 4px; }
   </style>
 </head>
@@ -115,17 +124,96 @@
 
   <div id="output" class="output"></div>
 
+  <div class="section">
+    <h2>Run Logs</h2>
+    <p class="hint">Server and FFmpeg output appear here after you click Run FFmpeg.</p>
+    <pre id="run-logs" class="output logs empty">No logs yet.</pre>
+  </div>
+
   <script>
     const form = document.getElementById('ffmpeg-form');
     const output = document.getElementById('output');
+    const runLogs = document.getElementById('run-logs');
     const checkOutput = document.getElementById('check-output');
     const runBtn = document.getElementById('run-btn');
     const checkBtn = document.getElementById('check-btn');
+    let logPollTimer = null;
+    let logSince = 0;
+    let activePid = null;
+
+    function getToken() {
+      return document.getElementById('token').value.trim();
+    }
 
     function showResult(target, response, data) {
       target.style.display = 'block';
       target.className = response.ok ? 'output success' : 'output error';
       target.textContent = JSON.stringify(data, null, 2);
+    }
+
+    function renderRunLogs(lines) {
+      if (!lines.length && !activePid) {
+        runLogs.textContent = 'No logs yet.';
+        runLogs.classList.add('empty');
+        return;
+      }
+
+      runLogs.classList.remove('empty');
+      if (runLogs.classList.contains('empty') || runLogs.textContent === 'No logs yet.') {
+        runLogs.textContent = lines.join('\n');
+      } else if (lines.length) {
+        runLogs.textContent += `\n${lines.join('\n')}`;
+      }
+      runLogs.scrollTop = runLogs.scrollHeight;
+    }
+
+    function stopLogPolling() {
+      if (logPollTimer) {
+        clearInterval(logPollTimer);
+        logPollTimer = null;
+      }
+    }
+
+    async function pollLogs() {
+      if (!activePid) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/ffmpeg/logs/${activePid}?since=${logSince}`, {
+          headers: {
+            'Authorization': `Bearer ${getToken()}`
+          }
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          return;
+        }
+
+        if (data.logs && data.logs.length) {
+          renderRunLogs(data.logs);
+          logSince = data.next_since;
+        }
+
+        if (!data.running) {
+          stopLogPolling();
+          renderRunLogs([`[status] Process finished with exit code ${data.exit_code}`]);
+        }
+      } catch (error) {
+        renderRunLogs([`[error] Failed to fetch logs: ${error.message}`]);
+      }
+    }
+
+    function startLogPolling(pid, initialLogs = []) {
+      stopLogPolling();
+      activePid = pid;
+      logSince = 0;
+      runLogs.textContent = '';
+      runLogs.classList.remove('empty');
+      renderRunLogs(initialLogs);
+      logSince = initialLogs.length;
+      logPollTimer = setInterval(pollLogs, 2000);
+      pollLogs();
     }
 
     checkBtn.addEventListener('click', async () => {
@@ -136,7 +224,7 @@
       try {
         const response = await fetch('/api/ffmpeg/check', {
           headers: {
-            'Authorization': `Bearer ${document.getElementById('token').value.trim()}`
+            'Authorization': `Bearer ${getToken()}`
           }
         });
         const data = await response.json();
@@ -168,13 +256,16 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${document.getElementById('token').value.trim()}`
+            'Authorization': `Bearer ${getToken()}`
           },
           body: JSON.stringify(payload)
         });
 
         const data = await response.json();
         showResult(output, response, data);
+        if (response.ok && data.pid) {
+          startLogPolling(data.pid, data.logs || []);
+        }
       } catch (error) {
         output.style.display = 'block';
         output.className = 'output error';
@@ -183,6 +274,15 @@
         runBtn.disabled = false;
       }
     });
+  </script>
+  <script>
+    setInterval(async () => {
+      try {
+        await fetch('/api/keepalive');
+      } catch (error) {
+        console.warn('Keepalive ping failed:', error);
+      }
+    }, 60000);
   </script>
 </body>
 </html>

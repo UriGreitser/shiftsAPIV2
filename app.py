@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, Response,send_file
+from flask import Flask, request, jsonify, Response, send_file, send_from_directory
 import csv
 import io
 import json
@@ -9,6 +9,8 @@ import pandas as pd
 import functools
 import os
 import time
+import subprocess
+import shutil
 
 app = Flask(__name__)
 stored_name = None
@@ -107,7 +109,58 @@ def csv_to_json_test(file_path):
 
 # prefrences_file = 'latest_pref.csv'
 
-API_TOKEN = "videotoken123" 
+API_TOKEN = "videotoken123"
+
+ffmpeg_processes = {}
+
+
+def build_ffmpeg_command(template, ip, port, stream_url):
+    return (
+        template
+        .replace("<ip>", ip)
+        .replace("<port>", port)
+        .replace("<stream url>", stream_url)
+        .replace("<stream_url>", stream_url)
+        .replace("<stream URL>", stream_url)
+    )
+
+
+def get_ffmpeg_status():
+    ffmpeg_path = shutil.which("ffmpeg")
+    if not ffmpeg_path:
+        return {
+            "installed": False,
+            "path": None,
+            "version": None,
+            "output": None,
+            "error": "ffmpeg not found on PATH",
+        }
+
+    try:
+        result = subprocess.run(
+            [ffmpeg_path, "-version"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+        output = (result.stdout or result.stderr).strip()
+        version_line = output.splitlines()[0] if output else None
+        return {
+            "installed": result.returncode == 0,
+            "path": ffmpeg_path,
+            "version": version_line,
+            "output": output,
+            "error": None if result.returncode == 0 else "ffmpeg -version failed",
+        }
+    except Exception as e:
+        return {
+            "installed": False,
+            "path": ffmpeg_path,
+            "version": None,
+            "output": None,
+            "error": str(e),
+        }
 
 #mapping between numbers and shifts
 def replace_shift_keys(input_json):
@@ -1538,6 +1591,59 @@ def newfunctioncreate():
         return jsonify({'error': str(e)}), 500
     
     
+@app.route('/ffmpeg')
+def ffmpeg_page():
+    return send_from_directory('static', 'ffmpeg.html')
+
+
+@app.route('/api/ffmpeg/check', methods=['GET'])
+@token_required
+def check_ffmpeg():
+    status = get_ffmpeg_status()
+    response_code = 200 if status["installed"] else 503
+    return jsonify(status), response_code
+
+
+@app.route('/api/ffmpeg/run', methods=['POST'])
+@token_required
+def run_ffmpeg():
+    data = request.get_json(silent=True) or {}
+
+    ip = str(data.get('ip', '')).strip()
+    port = str(data.get('port', '')).strip()
+    stream_url = str(data.get('stream_url', '')).strip()
+    ffmpeg_command = str(data.get('ffmpeg_command', '')).strip()
+
+    if not all([ip, port, stream_url, ffmpeg_command]):
+        return jsonify({'error': 'ip, port, stream_url, and ffmpeg_command are required'}), 400
+
+    resolved_command = build_ffmpeg_command(ffmpeg_command, ip, port, stream_url)
+
+    try:
+        process = subprocess.Popen(
+            resolved_command,
+            shell=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+    except Exception as e:
+        return jsonify({'error': f'Failed to start ffmpeg: {str(e)}'}), 500
+
+    ffmpeg_processes[process.pid] = {
+        'pid': process.pid,
+        'command': resolved_command,
+        'ip': ip,
+        'port': port,
+        'stream_url': stream_url
+    }
+
+    return jsonify({
+        'message': 'FFmpeg started successfully',
+        'pid': process.pid,
+        'command': resolved_command
+    }), 200
+
+
 # Root route (GET request)
 @app.route('/')
 def home():

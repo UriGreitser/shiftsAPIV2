@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FFmpeg Runner</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 720px;
+      margin: 40px auto;
+      padding: 0 20px;
+      background: #f5f5f5;
+      color: #222;
+    }
+    h1 { margin-bottom: 8px; }
+    p.hint { color: #555; margin-top: 0; margin-bottom: 24px; }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      margin-bottom: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    textarea {
+      min-height: 120px;
+      font-family: Consolas, Monaco, monospace;
+      resize: vertical;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 6px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+    button:hover { background: #1d4ed8; }
+    button.secondary {
+      background: #475569;
+      margin-left: 8px;
+    }
+    button.secondary:hover { background: #334155; }
+    button:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+    }
+    .section {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .section h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+    .output {
+      margin-top: 24px;
+      padding: 16px;
+      border-radius: 6px;
+      background: white;
+      border: 1px solid #ddd;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 13px;
+      display: none;
+    }
+    .output.error { border-color: #ef4444; background: #fef2f2; }
+    .output.success { border-color: #22c55e; background: #f0fdf4; }
+    code { background: #eee; padding: 2px 6px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>FFmpeg Runner</h1>
+  <p class="hint">
+    Enter values below. Your FFmpeg command can use placeholders:
+    <code>&lt;ip&gt;</code>, <code>&lt;port&gt;</code>, and <code>&lt;stream url&gt;</code>.
+  </p>
+
+  <div class="section">
+    <h2>FFmpeg Installation Check</h2>
+    <p class="hint">Verify that FFmpeg is available on the server before running a stream command.</p>
+    <label for="token">API Token</label>
+    <input type="password" id="token" placeholder="Bearer token" required>
+    <button type="button" id="check-btn">Check FFmpeg</button>
+    <div id="check-output" class="output"></div>
+  </div>
+
+  <form id="ffmpeg-form">
+    <label for="ip">IP</label>
+    <input type="text" id="ip" placeholder="192.168.1.100" required>
+
+    <label for="port">Port</label>
+    <input type="text" id="port" placeholder="554" required>
+
+    <label for="stream_url">Stream URL</label>
+    <input type="text" id="stream_url" placeholder="rtsp://example.com/stream" required>
+
+    <label for="ffmpeg_command">FFmpeg Command</label>
+    <textarea id="ffmpeg_command" placeholder="ffmpeg -i &lt;stream url&gt; -f mpegts udp://&lt;ip&gt;:&lt;port&gt;" required></textarea>
+
+    <button type="submit" id="run-btn">Run FFmpeg</button>
+  </form>
+
+  <div id="output" class="output"></div>
+
+  <script>
+    const form = document.getElementById('ffmpeg-form');
+    const output = document.getElementById('output');
+    const checkOutput = document.getElementById('check-output');
+    const runBtn = document.getElementById('run-btn');
+    const checkBtn = document.getElementById('check-btn');
+
+    function showResult(target, response, data) {
+      target.style.display = 'block';
+      target.className = response.ok ? 'output success' : 'output error';
+      target.textContent = JSON.stringify(data, null, 2);
+    }
+
+    checkBtn.addEventListener('click', async () => {
+      checkBtn.disabled = true;
+      checkOutput.style.display = 'none';
+      checkOutput.className = 'output';
+
+      try {
+        const response = await fetch('/api/ffmpeg/check', {
+          headers: {
+            'Authorization': `Bearer ${document.getElementById('token').value.trim()}`
+          }
+        });
+        const data = await response.json();
+        showResult(checkOutput, response, data);
+      } catch (error) {
+        checkOutput.style.display = 'block';
+        checkOutput.className = 'output error';
+        checkOutput.textContent = `Request failed: ${error.message}`;
+      } finally {
+        checkBtn.disabled = false;
+      }
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      runBtn.disabled = true;
+      output.style.display = 'none';
+      output.className = 'output';
+
+      const payload = {
+        ip: document.getElementById('ip').value.trim(),
+        port: document.getElementById('port').value.trim(),
+        stream_url: document.getElementById('stream_url').value.trim(),
+        ffmpeg_command: document.getElementById('ffmpeg_command').value.trim()
+      };
+
+      try {
+        const response = await fetch('/api/ffmpeg/run', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${document.getElementById('token').value.trim()}`
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        showResult(output, response, data);
+      } catch (error) {
+        output.style.display = 'block';
+        output.className = 'output error';
+        output.textContent = `Request failed: ${error.message}`;
+      } finally {
+        runBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
